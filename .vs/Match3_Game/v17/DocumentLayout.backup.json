@@ -1,0 +1,152 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\myUnityproject\\match3\\Match3_Game\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|c:\\myunityproject\\match3\\match3_game\\assets\\scripts\\boardmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\boardmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|c:\\myunityproject\\match3\\match3_game\\assets\\scripts\\gem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|C:\\myUnityproject\\match3\\Match3_Game\\assets\\scripts\\stagemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stagemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|c:\\myunityproject\\match3\\match3_game\\assets\\scripts\\stageselectpanelcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stageselectpanelcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|C:\\myUnityproject\\match3\\Match3_Game\\assets\\scripts\\stageselectui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stageselectui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|C:\\myUnityproject\\match3\\Match3_Game\\assets\\scripts\\stagebutton.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stagebutton.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|C:\\myUnityproject\\match3\\Match3_Game\\assets\\scripts\\stagedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stagedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|C:\\myUnityproject\\match3\\Match3_Game\\assets\\scripts\\stagedatabase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EF0592FC-1275-88FA-A500-263F23F37BD3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stagedatabase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 4,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Gem.cs",
+              "DocumentMoniker": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\Gem.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Gem.cs",
+              "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\Gem.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Gem.cs",
+              "ViewState": "AgIAACYAAAAAAAAAAAAowDsAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-03T04:09:47.549Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "StageSelectPanelController.cs",
+              "DocumentMoniker": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\StageSelectPanelController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\StageSelectPanelController.cs",
+              "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\StageSelectPanelController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\StageSelectPanelController.cs",
+              "ViewState": "AgIAACoAAAAAAAAAAAAIwDcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-03T03:19:46.843Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "StageSelectUI.cs",
+              "DocumentMoniker": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\StageSelectUI.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\StageSelectUI.cs",
+              "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\StageSelectUI.cs",
+              "RelativeToolTip": "Assets\\Scripts\\StageSelectUI.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T06:42:55.232Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "StageButton.cs",
+              "DocumentMoniker": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\StageButton.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\StageButton.cs",
+              "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\StageButton.cs",
+              "RelativeToolTip": "Assets\\Scripts\\StageButton.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T05:55:10.777Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "BoardManager.cs",
+              "DocumentMoniker": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\BoardManager.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\BoardManager.cs",
+              "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\BoardManager.cs",
+              "RelativeToolTip": "Assets\\Scripts\\BoardManager.cs",
+              "ViewState": "AgIAAO4CAAAAAAAAAAAowAQDAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T05:36:14.051Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "StageManager.cs",
+              "DocumentMoniker": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\StageManager.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\StageManager.cs",
+              "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\StageManager.cs",
+              "RelativeToolTip": "Assets\\Scripts\\StageManager.cs",
+              "ViewState": "AgIAACgAAAAAAAAAAAAowDwAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T05:35:49.902Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "StageDatabase.cs",
+              "DocumentMoniker": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\StageDatabase.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\StageDatabase.cs",
+              "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\StageDatabase.cs",
+              "RelativeToolTip": "Assets\\Scripts\\StageDatabase.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T05:33:45.429Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "StageData.cs",
+              "DocumentMoniker": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\StageData.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\StageData.cs",
+              "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game\\Assets\\Scripts\\StageData.cs",
+              "RelativeToolTip": "Assets\\Scripts\\StageData.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T05:33:01.867Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
