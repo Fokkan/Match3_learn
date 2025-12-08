@@ -4168,11 +4168,13 @@ MonoBehaviour:
   height: 5
   gemPrefab: {fileID: 718254832561619316, guid: 988d4074a833b754cb9944eee8ac24e2, type: 3}
   gemSprites:
-  - {fileID: 7482667652216324306, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
-  - {fileID: 7482667652216324306, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
-  - {fileID: 7482667652216324306, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
-  - {fileID: 7482667652216324306, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
-  - {fileID: 7482667652216324306, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
+  - {fileID: 783853256, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
+  - {fileID: -1393755642, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
+  - {fileID: -1636292308, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
+  - {fileID: -500896320, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
+  - {fileID: 148824056, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
+  - {fileID: 2011360779, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
+  - {fileID: -421709644, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
   scoreText: {fileID: 329668528}
   baseScorePerGem: 10
   popDuration: 0.45

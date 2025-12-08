@@ -1,2 +1,17 @@
 fileFormatVersion: 2
 guid: 8b85911af8b371046824b3ef84743c32
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - board: {instanceID: 0}
+  - normalSprite: {instanceID: 0}
+  - rowBombSprite: {fileID: -599239779167545910, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
+  - colBombSprite: {fileID: -5653763009156058411, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
+  - wrappedBombSprite: {fileID: -6401226255081047871, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
+  - colorBombSprite: {fileID: 2089717927940913464, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

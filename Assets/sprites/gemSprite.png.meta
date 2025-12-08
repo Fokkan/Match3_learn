@@ -178,23 +178,177 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Square
+      name: gemSprite_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 256
-        height: 256
+        x: 50
+        y: 644
+        width: 293
+        height: 278
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 2d009a6b596c7d760800000000000000
-      internalID: 7482667652216324306
+      spriteID: 09124e2fd0f48d643baf5ffeac9dc798
+      internalID: 783853256
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: gemSprite_1
+      rect:
+        serializedVersion: 2
+        x: 369
+        y: 646
+        width: 284
+        height: 274
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f90e0236dfb2628479236000b8480552
+      internalID: -1393755642
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: gemSprite_2
+      rect:
+        serializedVersion: 2
+        x: 681
+        y: 649
+        width: 284
+        height: 269
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a82a59c628866ed409c0179fcfbe5c65
+      internalID: -1636292308
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: gemSprite_3
+      rect:
+        serializedVersion: 2
+        x: 53
+        y: 342
+        width: 288
+        height: 279
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1eec051c80ee651419b4d10203901988
+      internalID: -500896320
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: gemSprite_4
+      rect:
+        serializedVersion: 2
+        x: 371
+        y: 337
+        width: 282
+        height: 286
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 98ce623ce72ce4746a890684de255ed3
+      internalID: 148824056
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: gemSprite_5
+      rect:
+        serializedVersion: 2
+        x: 682
+        y: 341
+        width: 281
+        height: 280
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7a0751e5a71d05e4087223642acc78e4
+      internalID: 2011360779
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: gemSprite_6
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 51
+        width: 286
+        height: 291
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 751669e27b2aeb042a8f66b7f5a142ae
+      internalID: -2049878295
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: gemSprite_8
+      rect:
+        serializedVersion: 2
+        x: 536
+        y: 49
+        width: 285
+        height: 292
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2e3ed20339845874c868caf813c4bbc1
+      internalID: -421709644
       vertices: []
       indices: 
       edges: []
@@ -217,7 +371,15 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Square: 7482667652216324306
+      gemSprite_0: 783853256
+      gemSprite_1: -1393755642
+      gemSprite_2: -1636292308
+      gemSprite_3: -500896320
+      gemSprite_4: 148824056
+      gemSprite_5: 2011360779
+      gemSprite_6: -2049878295
+      gemSprite_7: -2016709530
+      gemSprite_8: -421709644
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

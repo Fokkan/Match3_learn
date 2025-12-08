@@ -86,7 +86,7 @@ SpriteRenderer:
   m_Size: {x: 1, y: 1}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!61 &1211516758642200583
@@ -152,10 +152,12 @@ MonoBehaviour:
   type: 0
   board: {fileID: 0}
   baseColor: {r: 1, g: 1, b: 1, a: 1}
-  swapDuration: 0.15
-  fallDuration: 0.25
   specialType: 0
+  sr: {fileID: 816508461619966625}
   normalSprite: {fileID: -6401226255081047871, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
   rowBombSprite: {fileID: -599239779167545910, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
   colBombSprite: {fileID: -5653763009156058411, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
+  wrappedBombSprite: {fileID: -6401226255081047871, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
   colorBombSprite: {fileID: 2089717927940913464, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
+  selectScale: 1.15
+  fallDuration: 0.25

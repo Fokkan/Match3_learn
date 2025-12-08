@@ -136,6 +136,73 @@ public class BoardManager : MonoBehaviour
             movesText.text = $"Moves: {movesLeft}";
     }
 
+    private void TryCreateWrappedFromMatches(bool[,] matched)
+    {
+        bool[,] visited = new bool[width, height];
+
+        for (int sx = 0; sx < width; sx++)
+        {
+            for (int sy = 0; sy < height; sy++)
+            {
+                if (!matched[sx, sy] || visited[sx, sy])
+                    continue;
+
+                List<Vector2Int> cluster = new List<Vector2Int>();
+                Queue<Vector2Int> q = new Queue<Vector2Int>();
+                q.Enqueue(new Vector2Int(sx, sy));
+                visited[sx, sy] = true;
+
+                while (q.Count > 0)
+                {
+                    var p = q.Dequeue();
+                    cluster.Add(p);
+
+                    int x = p.x;
+                    int y = p.y;
+
+                    int[] dx4 = { 1, -1, 0, 0 };
+                    int[] dy4 = { 0, 0, 1, -1 };
+
+                    for (int i = 0; i < 4; i++)
+                    {
+                        int nx = x + dx4[i];
+                        int ny = y + dy4[i];
+
+                        if (nx < 0 || nx >= width || ny < 0 || ny >= height)
+                            continue;
+                        if (!matched[nx, ny] || visited[nx, ny])
+                            continue;
+
+                        visited[nx, ny] = true;
+                        q.Enqueue(new Vector2Int(nx, ny));
+                    }
+                }
+
+                // 5개 이상이면 일단 Wrapped 하나 생성
+                if (cluster.Count >= 5)
+                {
+                    // 일단 클러스터 가운데 쯤을 선택
+                    Vector2Int pivot = cluster[cluster.Count / 2];
+
+                    int px = pivot.x;
+                    int py = pivot.y;
+
+                    Gem g = gems[px, py];
+                    if (g != null)
+                    {
+                        g.SetSpecial(SpecialGemType.WrappedBomb);
+                        matched[px, py] = false; // 이 칸은 삭제하지 않는다
+
+                        Debug.Log($"Wrapped created at ({px},{py}) from cluster size {cluster.Count}");
+                    }
+
+                    // 한 클러스터에서 랩드는 하나만
+                }
+            }
+        }
+    }
+
+
     // --------------------------------
     // Start
     // --------------------------------
@@ -190,7 +257,7 @@ public class BoardManager : MonoBehaviour
                     if (gemSprites != null && gemSprites.Length > 0)
                         sr.sprite = gemSprites[type];
 
-                    sr.color = GetColorByType(type);
+                    sr.color = Color.white;
                 }
 
                 Gem gem = obj.GetComponent<Gem>();
@@ -291,7 +358,7 @@ public class BoardManager : MonoBehaviour
             if (gemSprites != null && gemSprites.Length > 0)
                 sr.sprite = gemSprites[type];
 
-            sr.color = GetColorByType(type);
+            sr.color = Color.white;
         }
 
         Gem gem = obj.GetComponent<Gem>();
@@ -467,112 +534,340 @@ public class BoardManager : MonoBehaviour
         SpecialGemType sa = a.specialType;
         SpecialGemType sb = b.specialType;
 
-        bool aColor = sa == SpecialGemType.ColorBomb;
-        bool bColor = sb == SpecialGemType.ColorBomb;
+        bool aSpecial = sa != SpecialGemType.None;
+        bool bSpecial = sb != SpecialGemType.None;
 
-        bool aLine = (sa == SpecialGemType.RowBomb || sa == SpecialGemType.ColBomb);
-        bool bLine = (sb == SpecialGemType.RowBomb || sb == SpecialGemType.ColBomb);
+        // 일반 + 일반 → 특수 조합 없음
+        if (!aSpecial && !bSpecial)
+            return 0;
 
-        bool aNormal = !a.IsSpecial;
-        bool bNormal = !b.IsSpecial;
-
-        // 마스크 준비
         bool[,] mask = new bool[width, height];
 
-        // 도우미: 라인폭탄 젬 하나에 대해 줄/열 마킹
-        void MarkLinesForGem(Gem g)
+        void MarkRow(int row)
         {
-            if (g.specialType == SpecialGemType.RowBomb)
-                MarkRow(mask, g.y);
-            else if (g.specialType == SpecialGemType.ColBomb)
-                MarkCol(mask, g.x);
+            if (row < 0 || row >= height) return;
+            for (int x = 0; x < width; x++)
+                if (gems[x, row] != null)
+                    mask[x, row] = true;
         }
 
-        // 1) ColorBomb + Normal : 해당 색 전체 삭제
-        if ((aColor && bNormal) || (bColor && aNormal))
+        void MarkCol(int col)
         {
-            Gem colorBomb = aColor ? a : b;
-            Gem normalGem = aColor ? b : a;
+            if (col < 0 || col >= width) return;
+            for (int y = 0; y < height; y++)
+                if (gems[col, y] != null)
+                    mask[col, y] = true;
+        }
 
-            int targetType = normalGem.type;
+        void MarkRowRange(int centerRow, int radius)
+        {
+            for (int dy = -radius; dy <= radius; dy++)
+                MarkRow(centerRow + dy);
+        }
 
+        void MarkColRange(int centerCol, int radius)
+        {
+            for (int dx = -radius; dx <= radius; dx++)
+                MarkCol(centerCol + dx);
+        }
+
+        // ============================
+        // 0) ColorBomb + ColorBomb → 전체 삭제 (그대로 유지)
+        // ============================
+        if (sa == SpecialGemType.ColorBomb && sb == SpecialGemType.ColorBomb)
+        {
             for (int x = 0; x < width; x++)
-            {
                 for (int y = 0; y < height; y++)
-                {
-                    if (gems[x, y] != null && gems[x, y].type == targetType)
+                    if (gems[x, y] != null)
                         mask[x, y] = true;
-                }
-            }
-
-            // 컬러밤 자신도 제거
-            mask[colorBomb.x, colorBomb.y] = true;
 
             return ClearByMask(mask);
         }
 
-        // 2) ColorBomb + LineBomb : 같은 색의 젬마다 줄/열 폭발 (다중 라인)
-        if ((aColor && bLine) || (bColor && aLine))
+        // ============================
+        // 1) ColorBomb + Normal → 해당 색 전체 삭제
+        // ============================
+        if (sa == SpecialGemType.ColorBomb && !bSpecial)
         {
-            Gem colorBomb = aColor ? a : b;
-            Gem lineBomb = aLine ? a : b;
+            int target = b.type;
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
+                    if (gems[x, y] != null && gems[x, y].type == target)
+                        mask[x, y] = true;
 
-            int targetType = lineBomb.type;
+            mask[a.x, a.y] = true;
+            return ClearByMask(mask);
+        }
+        if (sb == SpecialGemType.ColorBomb && !aSpecial)
+        {
+            int target = a.type;
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
+                    if (gems[x, y] != null && gems[x, y].type == target)
+                        mask[x, y] = true;
 
+            mask[b.x, b.y] = true;
+            return ClearByMask(mask);
+        }
+
+        // ============================
+        // 2) Row + Row → 중심 기준 3줄
+        // ============================
+        if (sa == SpecialGemType.RowBomb && sb == SpecialGemType.RowBomb)
+        {
+            int centerRow = a.y;
+            MarkRowRange(centerRow, 1); // 위/중/아래
+            return ClearByMask(mask);
+        }
+
+        // 3) Col + Col → 중심 기준 3열
+        if (sa == SpecialGemType.ColBomb && sb == SpecialGemType.ColBomb)
+        {
+            int centerCol = a.x;
+            MarkColRange(centerCol, 1); // 좌/중/우
+            return ClearByMask(mask);
+        }
+
+        // 4) Row + Col → 십자폭발
+        if ((sa == SpecialGemType.RowBomb && sb == SpecialGemType.ColBomb) ||
+            (sa == SpecialGemType.ColBomb && sb == SpecialGemType.RowBomb))
+        {
+            int row = a.y;
+            int col = b.x;
+
+            MarkRow(row);
+            MarkCol(col);
+
+            return ClearByMask(mask);
+        }
+
+        // ============================
+        // 5) Row + Wrapped / Wrapped + Row
+        //    → Stripe 방향 기준 5줄 폭발 (위/중/아래 + 추가 2줄)
+        // ============================
+        if ((sa == SpecialGemType.RowBomb && sb == SpecialGemType.WrappedBomb) ||
+            (sa == SpecialGemType.WrappedBomb && sb == SpecialGemType.RowBomb))
+        {
+            // RowBomb 쪽 줄을 중심으로 5줄
+            int centerRow = (sa == SpecialGemType.RowBomb) ? a.y : b.y;
+            MarkRowRange(centerRow, 2); // 총 5줄
+            return ClearByMask(mask);
+        }
+
+        // 6) Col + Wrapped / Wrapped + Col → 5열 폭발
+        if ((sa == SpecialGemType.ColBomb && sb == SpecialGemType.WrappedBomb) ||
+            (sa == SpecialGemType.WrappedBomb && sb == SpecialGemType.ColBomb))
+        {
+            int centerCol = (sa == SpecialGemType.ColBomb) ? a.x : b.x;
+            MarkColRange(centerCol, 2); // 총 5열
+            return ClearByMask(mask);
+        }
+
+        // ============================
+        // 7) Wrapped + Wrapped
+        //    → 두 위치 중심 3×3 폭발(두 영역 합집합)
+        // ============================
+        if (sa == SpecialGemType.WrappedBomb && sb == SpecialGemType.WrappedBomb)
+        {
+            Mark3x3(mask, a.x, a.y);
+            Mark3x3(mask, b.x, b.y);
+
+            return ClearByMask(mask);
+        }
+
+        // ============================
+        // 8) ColorBomb + Wrapped
+        //    → 해당 색 젬 중 6~12개 랜덤 선택,
+        //       각 위치에서 3×3 폭발
+        // ============================
+        if ((sa == SpecialGemType.ColorBomb && sb == SpecialGemType.WrappedBomb) ||
+            (sa == SpecialGemType.WrappedBomb && sb == SpecialGemType.ColorBomb))
+        {
+            // Wrapped 아닌 쪽이 ColorBomb, Wrapped 쪽의 색을 타겟으로 사용
+            Gem colorGem = (sa == SpecialGemType.ColorBomb) ? a : b;
+            Gem wrappedGem = (sa == SpecialGemType.WrappedBomb) ? a : b;
+
+            int targetType = wrappedGem.type;
+
+            // 대상 색 젬 리스트 수집
+            List<Gem> candidates = new List<Gem>();
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
                 {
                     Gem g = gems[x, y];
                     if (g == null) continue;
+                    if (g.type != targetType) continue;
 
-                    if (g.type == targetType)
-                    {
-                        if (lineBomb.specialType == SpecialGemType.RowBomb)
-                            MarkRow(mask, y);       // 해당 색이 있던 줄 전체
-                        else if (lineBomb.specialType == SpecialGemType.ColBomb)
-                            MarkCol(mask, x);       // 해당 색이 있던 열 전체
-                    }
+                    candidates.Add(g);
                 }
             }
 
-            // 스왑에 참여한 두 젬도 제거
-            mask[colorBomb.x, colorBomb.y] = true;
-            mask[lineBomb.x, lineBomb.y] = true;
+            if (candidates.Count == 0)
+                return 0;
 
-            return ClearByMask(mask);
-        }
+            // 6~12개 사이 (하지만 전체 개수를 넘지 않도록)
+            int maxPick = Mathf.Min(12, candidates.Count);
+            int minPick = Mathf.Min(6, maxPick);
+            int pickCount = Random.Range(minPick, maxPick + 1);
 
-        // 3) LineBomb + LineBomb : 십자형 대폭발 (두 젬의 줄/열 모두)
-        if (aLine && bLine)
-        {
-            MarkLinesForGem(a);
-            MarkLinesForGem(b);
-
-            // 두 젬 위치는 확실히 포함
-            mask[a.x, a.y] = true;
-            mask[b.x, b.y] = true;
-
-            return ClearByMask(mask);
-        }
-
-        // 4) ColorBomb + ColorBomb : 보드 전체 삭제
-        if (aColor && bColor)
-        {
-            for (int x = 0; x < width; x++)
+            // 랜덤 셔플
+            for (int i = 0; i < candidates.Count; i++)
             {
-                for (int y = 0; y < height; y++)
-                {
-                    if (gems[x, y] != null)
-                        mask[x, y] = true;
-                }
+                int r = Random.Range(i, candidates.Count);
+                var tmp = candidates[i];
+                candidates[i] = candidates[r];
+                candidates[r] = tmp;
             }
+
+            // 앞에서 pickCount개만 사용
+            for (int i = 0; i < pickCount; i++)
+            {
+                Gem g = candidates[i];
+                Mark3x3(mask, g.x, g.y);
+            }
+
+            // 원래 ColorBomb, Wrapped 도 같이 삭제
+            mask[colorGem.x, colorGem.y] = true;
+            mask[wrappedGem.x, wrappedGem.y] = true;
 
             return ClearByMask(mask);
         }
 
-        // 나머지는 일반 스왑 (조합 없음)
+        // 그 외 조합은 특수 발동 없음
         return 0;
+    }
+
+    private void Mark3x3(bool[,] mask, int cx, int cy)
+    {
+        for (int dx = -1; dx <= 1; dx++)
+        {
+            int x = cx + dx;
+            if (x < 0 || x >= width) continue;
+
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                int y = cy + dy;
+                if (y < 0 || y >= height) continue;
+
+                if (gems[x, y] != null)
+                    mask[x, y] = true;
+            }
+        }
+    }
+
+    // ColorBomb : targetType 색 전체 삭제
+    private int ActivateColorBomb(int targetType, Gem colorBombGem)
+    {
+        int cleared = 0;
+
+        // 컬러밤 자신도 포함
+        if (colorBombGem != null)
+        {
+            PopGem(colorBombGem);
+            cleared++;
+        }
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Gem g = gems[x, y];
+                if (g == null) continue;
+                if (g.type != targetType) continue;
+
+                PopGem(g);
+                cleared++;
+            }
+        }
+
+        return cleared;
+    }
+
+    // RowBomb : 해당 줄 전체 삭제
+    private int ActivateRowBomb(int row)
+    {
+        int cleared = 0;
+
+        if (row < 0 || row >= height)
+            return 0;
+
+        for (int x = 0; x < width; x++)
+        {
+            Gem g = gems[x, row];
+            if (g == null) continue;
+
+            PopGem(g);
+            cleared++;
+        }
+
+        return cleared;
+    }
+
+    // ColBomb : 해당 열 전체 삭제
+    private int ActivateColBomb(int col)
+    {
+        int cleared = 0;
+
+        if (col < 0 || col >= width)
+            return 0;
+
+        for (int y = 0; y < height; y++)
+        {
+            Gem g = gems[col, y];
+            if (g == null) continue;
+
+            PopGem(g);
+            cleared++;
+        }
+
+        return cleared;
+    }
+    // 중심 줄 기준으로 위/아래 1줄까지 총 3줄 폭발
+    private int ActivateTripleRowBomb(int centerRow)
+    {
+        int cleared = 0;
+
+        for (int dy = -1; dy <= 1; dy++)
+        {
+            int row = centerRow + dy;
+            if (row < 0 || row >= height) continue;
+
+            cleared += ActivateRowBomb(row);
+        }
+
+        return cleared;
+    }
+
+    // 중심 열 기준으로 좌/우 1열까지 총 3열 폭발
+    private int ActivateTripleColBomb(int centerCol)
+    {
+        int cleared = 0;
+
+        for (int dx = -1; dx <= 1; dx++)
+        {
+            int col = centerCol + dx;
+            if (col < 0 || col >= width) continue;
+
+            cleared += ActivateColBomb(col);
+        }
+
+        return cleared;
+    }
+
+    private void PopGem(Gem g)
+    {
+        int x = g.x;
+        int y = g.y;
+
+        // 배열에서 제거
+        if (gems[x, y] == g)
+            gems[x, y] = null;
+
+        // 이펙트 / 사운드 / 점수 팝업은
+        // 필요하면 여기에도 추가할 수 있음 (지금은 최소 버전)
+
+        Destroy(g.gameObject);
     }
 
 
@@ -582,12 +877,14 @@ public class BoardManager : MonoBehaviour
 
     private IEnumerator HandleSwapAndMatches(Gem first, Gem second)
     {
+        // 이미 다른 애니메이션 중이면 무시
         if (isAnimating) yield break;
         isAnimating = true;
 
+        // 스왑 사운드
         PlaySfx(swapClip);
 
-        // 실제 스왑
+        // 실제 위치 교환
         SwapGems(first, second);
 
         // 스왑 애니메이션 대기
@@ -596,26 +893,28 @@ public class BoardManager : MonoBehaviour
         int totalCleared = 0;
         int combo = 0;
 
-        // 1) 먼저 스페셜 조합 여부 확인
+        // 1) 먼저 "특수젬 + 일반젬 스왑" 조합 검사
+        //    (RowBomb / ColBomb / ColorBomb 발동 등)
         int specialCleared = ResolveSpecialSwapIfNeeded(first, second);
 
         if (specialCleared > 0)
         {
-            // 스페셜 조합으로 이미 일부가 터졌다면, 그걸 1콤보로 처리
+            // 특수 발동도 1콤보로 간주
             combo = 1;
             totalCleared = specialCleared;
 
             int gained = baseScorePerGem * specialCleared * combo;
             score += gained;
 
+            UpdateScoreUI();
+
+            // 보드 채우기
             yield return new WaitForSeconds(popDuration);
-
             RefillBoard();
-
             yield return new WaitForSeconds(fallWaitTime);
         }
 
-        // 2) 이후에는 기존처럼 일반 매치/콤보 처리 (체인)
+        // 2) 이후에는 기존처럼 자동 매치/콤보 처리
         while (true)
         {
             currentComboForPopup = combo + 1;
@@ -629,6 +928,10 @@ public class BoardManager : MonoBehaviour
 
             int gained = baseScorePerGem * cleared * combo;
             score += gained;
+
+            Debug.Log($"Combo {combo}! cleared: {cleared}, gained: {gained}, score: {score}");
+
+            UpdateScoreUI();
 
             yield return new WaitForSeconds(popDuration);
 
@@ -645,10 +948,9 @@ public class BoardManager : MonoBehaviour
         }
         else
         {
-            UpdateScoreUI();
+            // 콤보 텍스트, 무브 차감, 클리어/실패 체크
             ShowComboBanner(combo);
 
-            // 유효한 스왑 1번당 이동 수 1 감소
             movesLeft--;
             UpdateMovesUI();
 
@@ -666,6 +968,7 @@ public class BoardManager : MonoBehaviour
                 yield break;
             }
 
+            // 더 이상 가능한 움직임 없으면 셔플
             if (!HasAnyPossibleMove())
             {
                 StartCoroutine(ShuffleRoutine());
@@ -674,6 +977,7 @@ public class BoardManager : MonoBehaviour
 
         isAnimating = false;
     }
+
 
 
     private void SwapGems(Gem a, Gem b)
@@ -701,157 +1005,85 @@ public class BoardManager : MonoBehaviour
 
     private int CheckMatchesAndClear()
     {
-        if (gems == null) return 0;
-
         bool[,] matched = new bool[width, height];
         int totalMatched = 0;
 
-        List<PendingSpecial> specialsToMake = new List<PendingSpecial>();
-
-        // 가로 검사
+        // ----- 가로 검사 -----
         for (int y = 0; y < height; y++)
         {
-            int x = 0;
-            while (x < width)
+            int runType = -1;
+            int runStartX = 0;
+            int runLength = 0;
+
+            for (int x = 0; x < width; x++)
             {
-                if (gems[x, y] == null)
+                int t = (gems[x, y] != null) ? gems[x, y].type : -1;
+
+                if (t == runType && t != -1)
                 {
-                    x++;
-                    continue;
+                    runLength++;
                 }
-
-                int type = gems[x, y].type;
-                int startX = x;
-                x++;
-
-                while (x < width &&
-                       gems[x, y] != null &&
-                       gems[x, y].type == type)
+                else
                 {
-                    x++;
-                }
-
-                int runLen = x - startX;
-                if (runLen >= 3)
-                {
-                    for (int k = startX; k < x; k++)
-                        matched[k, y] = true;
-
-                    if (runLen >= 4)
+                    if (runLength >= 3 && runType != -1)
                     {
-                        int midX = startX + runLen / 2;
-                        SpecialGemType spType =
-                            (runLen >= 5) ? SpecialGemType.ColorBomb
-                                          : SpecialGemType.RowBomb;
-
-                        specialsToMake.Add(new PendingSpecial(midX, y, spType));
+                        for (int k = 0; k < runLength; k++)
+                            matched[runStartX + k, y] = true;
                     }
+
+                    runType = t;
+                    runStartX = x;
+                    runLength = (t == -1) ? 0 : 1;
                 }
+            }
+
+            if (runLength >= 3 && runType != -1)
+            {
+                for (int k = 0; k < runLength; k++)
+                    matched[runStartX + k, y] = true;
             }
         }
 
-        // 세로 검사
+        // ----- 세로 검사 -----
         for (int x = 0; x < width; x++)
         {
-            int y = 0;
-            while (y < height)
-            {
-                if (gems[x, y] == null)
-                {
-                    y++;
-                    continue;
-                }
+            int runType = -1;
+            int runStartY = 0;
+            int runLength = 0;
 
-                int type = gems[x, y].type;
-                int startY = y;
-                y++;
-
-                while (y < height &&
-                       gems[x, y] != null &&
-                       gems[x, y].type == type)
-                {
-                    y++;
-                }
-
-                int runLen = y - startY;
-                if (runLen >= 3)
-                {
-                    for (int k = startY; k < y; k++)
-                        matched[x, k] = true;
-
-                    if (runLen >= 4)
-                    {
-                        int midY = startY + runLen / 2;
-                        SpecialGemType spType =
-                            (runLen >= 5) ? SpecialGemType.ColorBomb
-                                          : SpecialGemType.ColBomb;
-
-                        specialsToMake.Add(new PendingSpecial(x, midY, spType));
-                    }
-                }
-            }
-        }
-
-        // 스페셜 승격 적용 (해당 칸은 매치에서 살아남음)
-        foreach (var sp in specialsToMake)
-        {
-            int sx = sp.x;
-            int sy = sp.y;
-            SpecialGemType st = sp.spType;
-
-            if (sx < 0 || sx >= width || sy < 0 || sy >= height)
-                continue;
-            if (gems[sx, sy] == null)
-                continue;
-
-            matched[sx, sy] = false;
-            gems[sx, sy].SetSpecial(st);
-        }
-
-        // 스페셜이 매치에 포함된 경우 추가 효과 적용
-        for (int x = 0; x < width; x++)
-        {
             for (int y = 0; y < height; y++)
             {
-                if (!matched[x, y]) continue;
-                Gem g = gems[x, y];
-                if (g == null) continue;
+                int t = (gems[x, y] != null) ? gems[x, y].type : -1;
 
-                if (g.specialType == SpecialGemType.RowBomb)
+                if (t == runType && t != -1)
                 {
-                    for (int cx = 0; cx < width; cx++)
-                    {
-                        if (gems[cx, y] != null)
-                            matched[cx, y] = true;
-                    }
+                    runLength++;
                 }
-                else if (g.specialType == SpecialGemType.ColBomb)
+                else
                 {
-                    for (int cy = 0; cy < height; cy++)
+                    if (runLength >= 3 && runType != -1)
                     {
-                        if (gems[x, cy] != null)
-                            matched[x, cy] = true;
+                        for (int k = 0; k < runLength; k++)
+                            matched[x, runStartY + k] = true;
                     }
+
+                    runType = t;
+                    runLength = (t == -1) ? 0 : 1;
                 }
-                else if (g.specialType == SpecialGemType.ColorBomb)
-                {
-                    int targetType = g.type;
-                    for (int ix = 0; ix < width; ix++)
-                    {
-                        for (int iy = 0; iy < height; iy++)
-                        {
-                            if (gems[ix, iy] != null &&
-                                gems[ix, iy].type == targetType)
-                            {
-                                matched[ix, iy] = true;
-                            }
-                        }
-                    }
-                }
+            }
+
+            if (runLength >= 3 && runType != -1)
+            {
+                for (int k = 0; k < runLength; k++)
+                    matched[x, runStartY + k] = true;
             }
         }
 
-        // 실제 제거
+        // ===== 여기 한 줄이 핵심 =====
+        // L/T 모양 매치에서 WrappedBomb 생성 시도
+        TryCreateWrappedFromMatches(matched);
+
+        // ----- 실제 제거 + 팝 애니메이션 -----
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -875,27 +1107,31 @@ public class BoardManager : MonoBehaviour
 
                     Transform t = g.transform;
                     t.DOKill();
+
                     t.localScale = Vector3.one * 0.8f;
 
                     Sequence popSeq = DOTween.Sequence();
                     popSeq.Append(
-                            t.DOScale(1.25f, popDuration * 0.4f)
-                             .SetEase(Ease.OutBack)
-                        )
-                        .Append(
-                            t.DOScale(0f, popDuration * 0.6f)
-                             .SetEase(Ease.InBack)
-                        )
-                        .OnComplete(() =>
-                        {
-                            Destroy(g.gameObject);
-                        });
+                                t.DOScale(1.25f, popDuration * 0.4f)
+                                 .SetEase(Ease.OutBack)
+                           )
+                           .Append(
+                                t.DOScale(0f, popDuration * 0.6f)
+                                 .SetEase(Ease.InBack)
+                           )
+                           .OnComplete(() =>
+                           {
+                               Destroy(g.gameObject);
+                           });
                 }
             }
         }
 
+        Debug.Log($"Matched & cleared: {totalMatched}");
         return totalMatched;
     }
+
+
 
     // --------------------------------
     // 빈 칸 채우기
@@ -927,6 +1163,7 @@ public class BoardManager : MonoBehaviour
             }
         }
     }
+
 
     // --------------------------------
     // 콤보 배너
@@ -1206,7 +1443,7 @@ public class BoardManager : MonoBehaviour
                         if (gemSprites != null && gemSprites.Length > 0)
                             sr.sprite = gemSprites[newType];
 
-                        sr.color = GetColorByType(newType);
+                        sr.color = Color.white;
                         gems[x, y].baseColor = sr.color;
                     }
 
@@ -1421,6 +1658,7 @@ public class BoardManager : MonoBehaviour
     // --------------------------------
     // Update
     // --------------------------------
+    private Gem debugSelectedGem;
 
     private void Update()
     {
@@ -1430,14 +1668,62 @@ public class BoardManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.R))
             RestartGame();
 
+#if UNITY_EDITOR
+        // 에디터에서만 디버그 키 처리
+        HandleDebugKeys();
+#endif
+
         idleTimer += Time.deltaTime;
 
-        if (!isShuffling && selectedGem == null && !isGameOver)
+        if (!isShuffling && selectedGem == null)
         {
             if (idleTimer >= hintDelay)
                 ShowHintIfPossible();
         }
     }
+    private void HandleDebugKeys()
+    {
+        // 아무 젬도 선택 안 돼 있으면 바로 종료
+        if (selectedGem == null)
+            return;
+
+        // 1: 일반
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            selectedGem.SetSpecial(SpecialGemType.None);
+            Debug.Log("Debug: set Normal");
+        }
+
+        // 2: 가로폭탄
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            selectedGem.SetSpecial(SpecialGemType.RowBomb);
+            Debug.Log("Debug: set RowBomb");
+        }
+
+        // 3: 세로폭탄
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            selectedGem.SetSpecial(SpecialGemType.ColBomb);
+            Debug.Log("Debug: set ColBomb");
+        }
+
+        // 4: 컬러봄
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            selectedGem.SetSpecial(SpecialGemType.ColorBomb);
+            Debug.Log("Debug: set ColorBomb");
+        }
+
+        // 5: Wrapped
+        if (Input.GetKeyDown(KeyCode.Alpha5))
+        {
+            selectedGem.SetSpecial(SpecialGemType.WrappedBomb);
+            Debug.Log($"Debug: set Wrapped at ({selectedGem.x},{selectedGem.y})");
+        }
+    }
+
+
     private void MarkRow(bool[,] mask, int row)
     {
         if (row < 0 || row >= height) return;
@@ -1501,5 +1787,19 @@ public class BoardManager : MonoBehaviour
 
         return totalCleared;
     }
+    private Gem GetGemUnderMouse()
+    {
+        Vector3 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 pos2D = new Vector2(worldPos.x, worldPos.y);
+
+        RaycastHit2D hit = Physics2D.Raycast(pos2D, Vector2.zero);
+        if (hit.collider != null)
+        {
+            return hit.collider.GetComponent<Gem>();
+        }
+
+        return null;
+    }
+
 
 }

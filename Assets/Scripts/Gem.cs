@@ -7,7 +7,8 @@ public enum SpecialGemType
     None,
     RowBomb,
     ColBomb,
-    ColorBomb
+    ColorBomb,
+    WrappedBomb        // 이름을 일관되게 PascalCase로 정리
 }
 
 public class Gem : MonoBehaviour
@@ -27,27 +28,29 @@ public class Gem : MonoBehaviour
     public bool IsColorBomb => specialType == SpecialGemType.ColorBomb;
     public bool IsRowBomb => specialType == SpecialGemType.RowBomb;
     public bool IsColBomb => specialType == SpecialGemType.ColBomb;
+    public bool IsWrappedBomb => specialType == SpecialGemType.WrappedBomb;
 
     [Header("Sprite Settings")]
+    public SpriteRenderer sr;        // 인스펙터에서 SpriteRenderer 연결
     public Sprite normalSprite;
     public Sprite rowBombSprite;
     public Sprite colBombSprite;
+    public Sprite wrappedBombSprite;
     public Sprite colorBombSprite;
 
     [Header("Tween Settings")]
     public float selectScale = 1.15f;
     public float fallDuration = 0.25f;
 
-    private SpriteRenderer sr;
     private Tween selectTween;
     private Tween hintTween;
     private Vector3 originalScale;
 
     private void Awake()
     {
-        sr = GetComponent<SpriteRenderer>();
+        if (sr == null)
+            sr = GetComponent<SpriteRenderer>();
 
-        // 현재 스케일을 원본으로 저장
         originalScale = transform.localScale;
 
         if (sr != null)
@@ -61,7 +64,6 @@ public class Gem : MonoBehaviour
         }
     }
 
-
     // 보드에서 이 젬을 초기화할 때 호출
     public void Init(BoardManager board, int x, int y, int type)
     {
@@ -70,17 +72,18 @@ public class Gem : MonoBehaviour
         this.y = y;
         this.type = type;
 
-        specialType = SpecialGemType.None;
-
         if (sr == null)
             sr = GetComponent<SpriteRenderer>();
 
-        if (sr != null)
+        // 기본 젬 스프라이트
+        if (board != null && board.gemSprites != null &&
+            type >= 0 && type < board.gemSprites.Length)
         {
-            baseColor = sr.color;
-            baseColor.a = 1f;
-            sr.color = baseColor;
+            sr.sprite = board.gemSprites[type];
         }
+
+        normalSprite = sr.sprite;
+        specialType = SpecialGemType.None;
     }
 
     // 현재 x,y 를 기준으로 격자 위치에 딱 붙이기
@@ -138,7 +141,7 @@ public class Gem : MonoBehaviour
         SetGridPosition(newX, newY, true, fallDuration);
     }
 
-    // 시각 상태를 항상 초기 상태로 복구
+    // 시각 상태 리셋
     public void ResetVisual()
     {
         if (sr == null)
@@ -174,15 +177,12 @@ public class Gem : MonoBehaviour
             return;
         }
 
-        // 선택 시: 먼저 시각 상태 리셋 후, 색만 살짝 밝게
         ResetVisual();
 
         Color c = baseColor * 1.2f;
         c.a = 1f;
         sr.color = c;
     }
-
-
 
     // 힌트 효과 시작
     public void PlayHintEffect()
@@ -193,7 +193,6 @@ public class Gem : MonoBehaviour
 
         ResetVisual();
 
-        // 완전히 0까지는 내리지 않고 0.3까지 깜박이기
         hintTween = sr.DOFade(0.3f, 0.4f)
                      .SetLoops(-1, LoopType.Yoyo);
     }
@@ -214,45 +213,67 @@ public class Gem : MonoBehaviour
         ResetVisual();
     }
 
-    // 스페셜 젬 타입 설정 (스프라이트만 교체)
-    public void SetSpecial(SpecialGemType type)
+    // 스페셜 젬 타입 설정 (스프라이트 교체)
+    public void SetSpecial(SpecialGemType newType)
     {
-        specialType = type;
+        specialType = newType;
 
         if (sr == null)
             sr = GetComponent<SpriteRenderer>();
-        if (sr == null) return;
-
-        // 스페셜 젬은 색이 들어가면 안 됨 → 무조건 순백색
-        sr.color = Color.white;
+        if (sr == null)
+            return;
 
         Sprite target = normalSprite;
 
-        switch (type)
+        switch (specialType)
         {
             case SpecialGemType.None:
                 target = normalSprite;
                 break;
 
             case SpecialGemType.RowBomb:
-                target = rowBombSprite != null ? rowBombSprite : normalSprite;
+                if (rowBombSprite != null) target = rowBombSprite;
                 break;
 
             case SpecialGemType.ColBomb:
-                target = colBombSprite != null ? colBombSprite : normalSprite;
+                if (colBombSprite != null) target = colBombSprite;
+                break;
+
+            case SpecialGemType.WrappedBomb:
+                if (wrappedBombSprite != null) target = wrappedBombSprite;
                 break;
 
             case SpecialGemType.ColorBomb:
-                target = colorBombSprite != null ? colorBombSprite : normalSprite;
+                if (colorBombSprite != null) target = colorBombSprite;
                 break;
         }
 
-        sr.sprite = target;
+        if (target != null)
+            sr.sprite = target;
+
+        Debug.Log($"SetSpecial -> {specialType}, sprite = {sr.sprite?.name}");
     }
 
+    // 타입/스페셜 강제 세팅 (셔플 등에서 사용)
+    public void ForceSetType(int newType, SpecialGemType special = SpecialGemType.None)
+    {
+        type = newType;
 
+        if (sr == null)
+            sr = GetComponent<SpriteRenderer>();
 
-    // 마우스로 클릭했을 때 BoardManager에 알리기
+        // 기본 스프라이트 갱신
+        if (board != null && board.gemSprites != null &&
+            newType >= 0 && newType < board.gemSprites.Length)
+        {
+            sr.sprite = board.gemSprites[newType];
+            normalSprite = sr.sprite;
+        }
+
+        // 특수 타입 적용 + 스프라이트 교체
+        SetSpecial(special);
+    }
+
     private void OnMouseDown()
     {
         if (board != null)

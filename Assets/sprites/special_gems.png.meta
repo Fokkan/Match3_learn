@@ -60,7 +60,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 250
+  spritePixelsToUnits: 350
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -190,10 +190,10 @@ TextureImporter:
       name: Gem_RowBomb
       rect:
         serializedVersion: 2
-        x: 13
-        y: 401
-        width: 256
-        height: 233
+        x: 121
+        y: 575
+        width: 336
+        height: 328
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -212,13 +212,13 @@ TextureImporter:
       name: Gem_ColorBomb
       rect:
         serializedVersion: 2
-        x: 275
-        y: 401
-        width: 256
-        height: 297
+        x: 578
+        y: 122
+        width: 322
+        height: 398
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      border: {x: 0, y: 0, z: 0, w: 56}
       customData: 
       outline: []
       physicsShape: []
@@ -234,10 +234,10 @@ TextureImporter:
       name: Gem_ColBomb
       rect:
         serializedVersion: 2
-        x: 525
-        y: 403
-        width: 256
-        height: 233
+        x: 577
+        y: 576
+        width: 332
+        height: 327
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -253,13 +253,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Gem_normal
+      name: Gem_Wrapped
       rect:
         serializedVersion: 2
-        x: 764
-        y: 401
-        width: 256
-        height: 233
+        x: 111
+        y: 130
+        width: 348
+        height: 334
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -291,7 +291,7 @@ TextureImporter:
       Gem_ColBomb: -5653763009156058411
       Gem_ColorBomb: 2089717927940913464
       Gem_RowBomb: -599239779167545910
-      Gem_normal: -6401226255081047871
+      Gem_Wrapped: -6401226255081047871
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
