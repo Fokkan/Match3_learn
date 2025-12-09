@@ -8,6 +8,11 @@ using UnityEngine.UI;
 
 public class BoardManager : MonoBehaviour
 {
+    [Header("Camera Settings")]
+    public Camera mainCamera;
+    public float boardTopMargin = 2f;   // 위쪽 UI 여유
+    public float boardSideMargin = 0.5f; // 좌우 여유
+
     [Header("Board Size")]
     public int width = 8;
     public int height = 8;
@@ -15,6 +20,9 @@ public class BoardManager : MonoBehaviour
     [Header("Gem Settings")]
     public GameObject gemPrefab;
     public Sprite[] gemSprites;
+
+    [Header("Special Sprites")]
+    public Sprite[] wrappedBombSprites; // type별 Wrapped (8종)
 
     [Header("Score Settings")]
     public TMP_Text scoreText;
@@ -113,6 +121,33 @@ public class BoardManager : MonoBehaviour
             this.spType = t;
         }
     }
+    private void AdjustCameraAndBoard()
+    {
+        if (mainCamera == null) mainCamera = Camera.main;
+        if (mainCamera == null) return;
+
+        // 1칸 = 1유닛, 보드는 (0,0)을 중심으로 깔려 있다고 가정
+        float cellSize = 1f;
+
+        float boardWorldWidth = (width - 1) * cellSize;
+        float boardWorldHeight = (height - 1) * cellSize;
+
+        // 보드를 화면 가운데에 두고 싶다면
+        transform.position = Vector3.zero;
+
+        // 세로 기준: 보드+위쪽 여유가 카메라 높이 안에 들어오게
+        float halfBoardHeight = boardWorldHeight * 0.5f;
+        float targetOrthoSize = halfBoardHeight + boardTopMargin;
+
+        // 가로 기준도 체크 (세로 모드라 대개 세로가 더 타이트하지만 혹시 몰라서)
+        float aspect = (float)Screen.width / Screen.height;
+        float halfBoardWidth = boardWorldWidth * 0.5f + boardSideMargin;
+        float orthoFromWidth = halfBoardWidth / aspect;
+
+        // 둘 중 더 큰 값을 사용
+        mainCamera.orthographicSize = Mathf.Max(targetOrthoSize, orthoFromWidth);
+    }
+
 
     // --------------------------------
     // UI 갱신 함수들
@@ -223,6 +258,7 @@ public class BoardManager : MonoBehaviour
             UpdateGoalUI();
             UpdateMovesUI();
         }
+
     }
 
     // --------------------------------
@@ -534,6 +570,16 @@ public class BoardManager : MonoBehaviour
         SpecialGemType sa = a.specialType;
         SpecialGemType sb = b.specialType;
 
+        // 1) ColorBomb + WrappedBomb
+        if (sa == SpecialGemType.ColorBomb && sb == SpecialGemType.WrappedBomb)
+        {
+            return ResolveColorBombWrapped(b.type);
+        }
+        if (sb == SpecialGemType.ColorBomb && sa == SpecialGemType.WrappedBomb)
+        {
+            return ResolveColorBombWrapped(a.type);
+        }
+
         bool aSpecial = sa != SpecialGemType.None;
         bool bSpecial = sb != SpecialGemType.None;
 
@@ -640,7 +686,18 @@ public class BoardManager : MonoBehaviour
 
             return ClearByMask(mask);
         }
+        // 2) Row/Col Stripe + WrappedBomb
+        bool aIsStripe = (sa == SpecialGemType.RowBomb || sa == SpecialGemType.ColBomb);
+        bool bIsStripe = (sb == SpecialGemType.RowBomb || sb == SpecialGemType.ColBomb);
 
+        if (aIsStripe && sb == SpecialGemType.WrappedBomb)
+        {
+            return ResolveStripeWrapped(a, b);
+        }
+        if (bIsStripe && sa == SpecialGemType.WrappedBomb)
+        {
+            return ResolveStripeWrapped(b, a);
+        }
         // ============================
         // 5) Row + Wrapped / Wrapped + Row
         //    → Stripe 방향 기준 5줄 폭발 (위/중/아래 + 추가 2줄)
@@ -738,6 +795,7 @@ public class BoardManager : MonoBehaviour
         return 0;
     }
 
+    // 중심 (cx,cy)를 포함한 3×3 영역을 mask에 표시
     private void Mark3x3(bool[,] mask, int cx, int cy)
     {
         for (int dx = -1; dx <= 1; dx++)
@@ -750,10 +808,46 @@ public class BoardManager : MonoBehaviour
                 int y = cy + dy;
                 if (y < 0 || y >= height) continue;
 
-                if (gems[x, y] != null)
-                    mask[x, y] = true;
+                mask[x, y] = true;
             }
         }
+    }
+    // Stripe(Row/Col) + WrappedBomb 조합
+    // 중심은 WrappedBomb가 있는 위치 기준
+    private int ResolveStripeWrapped(Gem stripe, Gem wrapped)
+    {
+        int cx = wrapped.x;
+        int cy = wrapped.y;
+
+        bool[,] mask = new bool[width, height];
+
+        // 가로 3줄
+        for (int dy = -1; dy <= 1; dy++)
+        {
+            int y = cy + dy;
+            if (y < 0 || y >= height) continue;
+
+            for (int x = 0; x < width; x++)
+            {
+                mask[x, y] = true;
+            }
+        }
+
+        // 세로 3줄
+        for (int dx = -1; dx <= 1; dx++)
+        {
+            int x = cx + dx;
+            if (x < 0 || x >= width) continue;
+
+            for (int y = 0; y < height; y++)
+            {
+                mask[x, y] = true;
+            }
+        }
+
+        int cleared = ClearByMask(mask);
+        Debug.Log($"Stripe+Wrapped at ({cx},{cy}), cleared {cleared}");
+        return cleared;
     }
 
     // ColorBomb : targetType 색 전체 삭제
@@ -854,6 +948,33 @@ public class BoardManager : MonoBehaviour
 
         return cleared;
     }
+    // ColorBomb + WrappedBomb 조합
+    // targetType = WrappedBomb가 가진 색(type)
+    private int ResolveColorBombWrapped(int targetType)
+    {
+        if (targetType < 0)
+            return 0;
+
+        bool[,] mask = new bool[width, height];
+
+        // 해당 색의 모든 젬 주변을 Wrapped 폭발처럼 3×3 마킹
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Gem g = gems[x, y];
+                if (g == null) continue;
+                if (g.type != targetType) continue;
+
+                Mark3x3(mask, x, y);
+            }
+        }
+
+        int cleared = ClearByMask(mask);
+        Debug.Log($"ColorBomb+Wrapped: type {targetType}, cleared {cleared}");
+        return cleared;
+    }
+
 
     private void PopGem(Gem g)
     {
@@ -999,12 +1120,13 @@ public class BoardManager : MonoBehaviour
         b.SetGridPosition(b.x, b.y);
     }
 
-    // --------------------------------
-    // 매치 검사 + 삭제 + 스페셜 생성
-    // --------------------------------
-
+    // ========= 매치 검사 + 삭제 =========
+    // ========= 매치 검사 + 삭제 =========
     private int CheckMatchesAndClear()
     {
+        if (gems == null)
+            return 0;
+
         bool[,] matched = new bool[width, height];
         int totalMatched = 0;
 
@@ -1025,10 +1147,13 @@ public class BoardManager : MonoBehaviour
                 }
                 else
                 {
+                    // 이전 런 마감
                     if (runLength >= 3 && runType != -1)
                     {
                         for (int k = 0; k < runLength; k++)
+                        {
                             matched[runStartX + k, y] = true;
+                        }
                     }
 
                     runType = t;
@@ -1037,10 +1162,13 @@ public class BoardManager : MonoBehaviour
                 }
             }
 
+            // 줄 끝에서 런 처리
             if (runLength >= 3 && runType != -1)
             {
                 for (int k = 0; k < runLength; k++)
+                {
                     matched[runStartX + k, y] = true;
+                }
             }
         }
 
@@ -1064,10 +1192,13 @@ public class BoardManager : MonoBehaviour
                     if (runLength >= 3 && runType != -1)
                     {
                         for (int k = 0; k < runLength; k++)
+                        {
                             matched[x, runStartY + k] = true;
+                        }
                     }
 
                     runType = t;
+                    runStartY = y;
                     runLength = (t == -1) ? 0 : 1;
                 }
             }
@@ -1075,61 +1206,162 @@ public class BoardManager : MonoBehaviour
             if (runLength >= 3 && runType != -1)
             {
                 for (int k = 0; k < runLength; k++)
+                {
                     matched[x, runStartY + k] = true;
+                }
             }
         }
 
-        // ===== 여기 한 줄이 핵심 =====
-        // L/T 모양 매치에서 WrappedBomb 생성 시도
-        TryCreateWrappedFromMatches(matched);
+        // 여기까지 오면 matched[x,y] == true 인 칸들이
+        // "이번 턴에 제거 대상"으로 찍힌 상태
 
-        // ----- 실제 제거 + 팝 애니메이션 -----
+        // ======================================================
+        // 4개 / 5개 이상 직선 매치 → 스트라이프 / 컬러봄 생성
+        // (가로 먼저, 그 다음 세로)
+        // ======================================================
+
+        // --- 가로 런 기준 ---
+        for (int y = 0; y < height; y++)
+        {
+            int runType = -1;
+            int runStartX = 0;
+            int runLength = 0;
+
+            // x == width 일 때 강제 마감용으로 한 칸 더 돈다
+            for (int x = 0; x <= width; x++)
+            {
+                int t = -1;
+                if (x < width && matched[x, y] && gems[x, y] != null)
+                    t = gems[x, y].type;
+
+                if (t == runType && t != -1)
+                {
+                    runLength++;
+                }
+                else
+                {
+                    if (runLength >= 4 && runType != -1)
+                    {
+                        int specialX = runStartX + runLength / 2;
+                        int specialY = y;
+
+                        Gem g = gems[specialX, specialY];
+                        if (g != null && g.specialType == SpecialGemType.None)
+                        {
+                            SpecialGemType st =
+                                (runLength >= 5)
+                                ? SpecialGemType.ColorBomb
+                                : SpecialGemType.RowBomb;
+
+                            g.ForceSetType(g.type, st);
+
+                            // 스페셜로 승격된 칸은 제거 대상에서 제외
+                            matched[specialX, specialY] = false;
+                        }
+                    }
+
+                    runType = t;
+                    runStartX = x;
+                    runLength = (t == -1) ? 0 : 1;
+                }
+            }
+        }
+
+        // --- 세로 런 기준 ---
+        for (int x = 0; x < width; x++)
+        {
+            int runType = -1;
+            int runStartY = 0;
+            int runLength = 0;
+
+            for (int y = 0; y <= height; y++)
+            {
+                int t = -1;
+                if (y < height && matched[x, y] && gems[x, y] != null)
+                    t = gems[x, y].type;
+
+                if (t == runType && t != -1)
+                {
+                    runLength++;
+                }
+                else
+                {
+                    if (runLength >= 4 && runType != -1)
+                    {
+                        int specialX = x;
+                        int specialY = runStartY + runLength / 2;
+
+                        Gem g = gems[specialX, specialY];
+                        if (g != null && g.specialType == SpecialGemType.None)
+                        {
+                            SpecialGemType st =
+                                (runLength >= 5)
+                                ? SpecialGemType.ColorBomb
+                                : SpecialGemType.ColBomb;
+
+                            g.ForceSetType(g.type, st);
+
+                            matched[specialX, specialY] = false;
+                        }
+                    }
+
+                    runType = t;
+                    runStartY = y;
+                    runLength = (t == -1) ? 0 : 1;
+                }
+            }
+        }
+
+        // ----- matched == true 인 칸 실제 제거 -----
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                if (matched[x, y] && gems[x, y] != null)
+                if (!matched[x, y])
+                    continue;
+                if (gems[x, y] == null)
+                    continue;
+
+                Gem g = gems[x, y];
+                gems[x, y] = null;
+                totalMatched++;
+
+                int popupScore = baseScorePerGem;
+                SpawnScorePopupAtWorld(popupScore, g.transform.position);
+                PlaySfx(matchClip);
+
+                if (matchEffectPrefab != null)
                 {
-                    Gem g = gems[x, y];
-                    gems[x, y] = null;
-                    totalMatched++;
-
-                    int popupScore = baseScorePerGem;
-                    SpawnScorePopupAtWorld(popupScore, g.transform.position);
-
-                    PlaySfx(matchClip);
-
-                    if (matchEffectPrefab != null)
-                    {
-                        Vector3 fxPos = g.transform.position;
-                        Instantiate(matchEffectPrefab, fxPos, Quaternion.identity);
-                    }
-
-                    Transform t = g.transform;
-                    t.DOKill();
-
-                    t.localScale = Vector3.one * 0.8f;
-
-                    Sequence popSeq = DOTween.Sequence();
-                    popSeq.Append(
-                                t.DOScale(1.25f, popDuration * 0.4f)
-                                 .SetEase(Ease.OutBack)
-                           )
-                           .Append(
-                                t.DOScale(0f, popDuration * 0.6f)
-                                 .SetEase(Ease.InBack)
-                           )
-                           .OnComplete(() =>
-                           {
-                               Destroy(g.gameObject);
-                           });
+                    Vector3 fxPos = g.transform.position;
+                    Instantiate(matchEffectPrefab, fxPos, Quaternion.identity);
                 }
+
+                Transform t = g.transform;
+                t.DOKill();
+
+                t.localScale = Vector3.one * 0.8f;
+
+                Sequence popSeq = DOTween.Sequence();
+                popSeq.Append(
+                            t.DOScale(1.25f, popDuration * 0.4f)
+                             .SetEase(Ease.OutBack)
+                       )
+                       .Append(
+                            t.DOScale(0f, popDuration * 0.6f)
+                             .SetEase(Ease.InBack)
+                       )
+                       .OnComplete(() =>
+                       {
+                           Destroy(g.gameObject);
+                       });
             }
         }
 
         Debug.Log($"Matched & cleared: {totalMatched}");
         return totalMatched;
     }
+
+
 
 
 
@@ -1629,23 +1861,57 @@ public class BoardManager : MonoBehaviour
 
     // StageManager에서 호출하는 스테이지 로딩 함수
     public void LoadStage(int boardWidth, int boardHeight, int goal, int totalMoves)
+{
+    // 1) 기존 젬들 전부 삭제
+    if (gems != null)
     {
-        ClearBoard();
+        int oldW = gems.GetLength(0);
+        int oldH = gems.GetLength(1);
 
-        width = boardWidth;
-        height = boardHeight;
-        targetScore = goal;
-        maxMoves = totalMoves;
-
-        ResetState();
-
-        gems = new Gem[width, height];
-        GenerateBoard();
-
-        UpdateScoreUI();
-        UpdateGoalUI();
-        UpdateMovesUI();
+        for (int x = 0; x < oldW; x++)
+        {
+            for (int y = 0; y < oldH; y++)
+            {
+                if (gems[x, y] != null)
+                {
+                    Destroy(gems[x, y].gameObject);
+                    gems[x, y] = null;
+                }
+            }
+        }
     }
+    ClearBoard();
+
+    // 2) 새 스테이지 값 적용
+    width       = boardWidth;
+    height      = boardHeight;
+    targetScore = goal;
+    maxMoves    = totalMoves;
+
+    // 3) 상태 리셋
+    isGameOver = false;
+    score      = 0;
+    movesLeft  = maxMoves;
+
+    ClearHint();
+    HideComboBannerImmediate();
+
+    if (gameOverPanel != null)
+        gameOverPanel.SetActive(false);
+
+    // 4) 새 보드 배열 만들고 재생성 (★ 여기 딱 한 번만!)
+    gems = new Gem[width, height];
+    GenerateBoard();
+
+    // 5) UI 갱신
+    UpdateScoreUI();
+    UpdateGoalUI();
+    UpdateMovesUI();
+
+    // 6) 카메라/보드 조정
+    AdjustCameraAndBoard();
+}
+
 
     public void OnClickNextStage()
     {
@@ -1738,11 +2004,10 @@ public class BoardManager : MonoBehaviour
             mask[col, y] = true;
     }
 
+    // mask[x,y] == true 인 칸들을 특수 폭발처럼 한 번에 제거
     private int ClearByMask(bool[,] mask)
     {
-        if (gems == null) return 0;
-
-        int totalCleared = 0;
+        int cleared = 0;
 
         for (int x = 0; x < width; x++)
         {
@@ -1753,7 +2018,7 @@ public class BoardManager : MonoBehaviour
 
                 Gem g = gems[x, y];
                 gems[x, y] = null;
-                totalCleared++;
+                cleared++;
 
                 int popupScore = baseScorePerGem;
                 SpawnScorePopupAtWorld(popupScore, g.transform.position);
@@ -1771,21 +2036,26 @@ public class BoardManager : MonoBehaviour
 
                 Sequence popSeq = DOTween.Sequence();
                 popSeq.Append(
-                        t.DOScale(1.25f, popDuration * 0.4f)
-                         .SetEase(Ease.OutBack)
-                    )
-                    .Append(
-                        t.DOScale(0f, popDuration * 0.6f)
-                         .SetEase(Ease.InBack)
-                    )
-                    .OnComplete(() =>
-                    {
-                        Destroy(g.gameObject);
-                    });
+                            t.DOScale(1.25f, popDuration * 0.4f)
+                             .SetEase(Ease.OutBack)
+                       )
+                       .Append(
+                            t.DOScale(0f, popDuration * 0.6f)
+                             .SetEase(Ease.InBack)
+                       )
+                       .OnComplete(() =>
+                       {
+                           Destroy(g.gameObject);
+                       });
             }
         }
 
-        return totalCleared;
+        if (cleared > 0)
+        {
+            UpdateScoreUI();
+        }
+
+        return cleared;
     }
     private Gem GetGemUnderMouse()
     {

@@ -240,7 +240,19 @@ public class Gem : MonoBehaviour
                 break;
 
             case SpecialGemType.WrappedBomb:
-                if (wrappedBombSprite != null) target = wrappedBombSprite;
+                // 1순위: BoardManager에 등록된 색별 Wrapped 스프라이트
+                if (board != null &&
+                    board.wrappedBombSprites != null &&
+                    type >= 0 && type < board.wrappedBombSprites.Length &&
+                    board.wrappedBombSprites[type] != null)
+                {
+                    target = board.wrappedBombSprites[type];
+                }
+                // 2순위: 기존 단일 wrappedBombSprite (백업용)
+                else if (wrappedBombSprite != null)
+                {
+                    target = wrappedBombSprite;
+                }
                 break;
 
             case SpecialGemType.ColorBomb:
@@ -251,8 +263,13 @@ public class Gem : MonoBehaviour
         if (target != null)
             sr.sprite = target;
 
-        Debug.Log($"SetSpecial -> {specialType}, sprite = {sr.sprite?.name}");
+        // Wrapped는 스프라이트 자체에 색이 들어가 있으니까 화이트 유지
+        sr.color = Color.white;
+
     }
+
+
+
 
     // 타입/스페셜 강제 세팅 (셔플 등에서 사용)
     public void ForceSetType(int newType, SpecialGemType special = SpecialGemType.None)

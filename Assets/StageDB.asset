@@ -15,16 +15,49 @@ MonoBehaviour:
   stages:
   - stageID: 1
     targetScore: 500
-    maxMoves: 25
-    boardWidth: 0
-    boardHeight: 0
+    maxMoves: 20
+    boardWidth: 5
+    boardHeight: 5
+    useObstacles: 0
+    obstacleCount: 0
+    obstacleLevel: 0
   - stageID: 2
-    targetScore: 1200
+    targetScore: 800
     maxMoves: 30
-    boardWidth: 0
-    boardHeight: 0
+    boardWidth: 5
+    boardHeight: 6
+    useObstacles: 0
+    obstacleCount: 0
+    obstacleLevel: 0
   - stageID: 3
-    targetScore: 2500
-    maxMoves: 35
-    boardWidth: 0
-    boardHeight: 0
+    targetScore: 1200
+    maxMoves: 20
+    boardWidth: 6
+    boardHeight: 6
+    useObstacles: 0
+    obstacleCount: 0
+    obstacleLevel: 0
+  - stageID: 4
+    targetScore: 1500
+    maxMoves: 22
+    boardWidth: 6
+    boardHeight: 7
+    useObstacles: 1
+    obstacleCount: 3
+    obstacleLevel: 1
+  - stageID: 5
+    targetScore: 1800
+    maxMoves: 22
+    boardWidth: 7
+    boardHeight: 7
+    useObstacles: 1
+    obstacleCount: 6
+    obstacleLevel: 2
+  - stageID: 6
+    targetScore: 2200
+    maxMoves: 24
+    boardWidth: 8
+    boardHeight: 8
+    useObstacles: 1
+    obstacleCount: 9
+    obstacleLevel: 3

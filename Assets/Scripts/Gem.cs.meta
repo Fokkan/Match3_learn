@@ -5,6 +5,7 @@ MonoImporter:
   serializedVersion: 2
   defaultReferences:
   - board: {instanceID: 0}
+  - sr: {instanceID: 0}
   - normalSprite: {instanceID: 0}
   - rowBombSprite: {fileID: -599239779167545910, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
   - colBombSprite: {fileID: -5653763009156058411, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
