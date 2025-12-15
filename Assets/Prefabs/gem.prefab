@@ -154,10 +154,28 @@ MonoBehaviour:
   baseColor: {r: 1, g: 1, b: 1, a: 1}
   specialType: 0
   sr: {fileID: 816508461619966625}
-  normalSprite: {fileID: -6401226255081047871, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
+  normalSprite: {fileID: 783853256, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
   rowBombSprite: {fileID: -599239779167545910, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
   colBombSprite: {fileID: -5653763009156058411, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
   wrappedBombSprite: {fileID: -6401226255081047871, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
   colorBombSprite: {fileID: 2089717927940913464, guid: 87970308943d9a64b9116f6a1727fb75, type: 3}
+  rowBombSpritesByType:
+  - {fileID: -866819771088506177, guid: 0c78489f0a03ef346b50027cd1b7c718, type: 3}
+  - {fileID: -6315306545326430708, guid: 0c78489f0a03ef346b50027cd1b7c718, type: 3}
+  - {fileID: -2581200768687699707, guid: 0c78489f0a03ef346b50027cd1b7c718, type: 3}
+  - {fileID: -7929598317872166041, guid: 0c78489f0a03ef346b50027cd1b7c718, type: 3}
+  - {fileID: -4062514561892442001, guid: 0c78489f0a03ef346b50027cd1b7c718, type: 3}
+  - {fileID: 1034288028891836344, guid: 0c78489f0a03ef346b50027cd1b7c718, type: 3}
+  - {fileID: -930561787128855084, guid: 0c78489f0a03ef346b50027cd1b7c718, type: 3}
+  - {fileID: 8676909712621260541, guid: 0c78489f0a03ef346b50027cd1b7c718, type: 3}
+  colBombSpritesByType:
+  - {fileID: -7617495827644536152, guid: 1628f1cfd815d8c4fa3eff81224a8dc6, type: 3}
+  - {fileID: -3861806749285774564, guid: 1628f1cfd815d8c4fa3eff81224a8dc6, type: 3}
+  - {fileID: -7272644210076147025, guid: 1628f1cfd815d8c4fa3eff81224a8dc6, type: 3}
+  - {fileID: 3187463077246716292, guid: 1628f1cfd815d8c4fa3eff81224a8dc6, type: 3}
+  - {fileID: 471198565631244648, guid: 1628f1cfd815d8c4fa3eff81224a8dc6, type: 3}
+  - {fileID: -4111538694705584200, guid: 1628f1cfd815d8c4fa3eff81224a8dc6, type: 3}
+  - {fileID: -7263603338652284068, guid: 1628f1cfd815d8c4fa3eff81224a8dc6, type: 3}
+  - {fileID: 5561449960679961381, guid: 1628f1cfd815d8c4fa3eff81224a8dc6, type: 3}
   selectScale: 1.15
   fallDuration: 0.25
