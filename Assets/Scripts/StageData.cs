@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 /// <summary>
 /// 개별 스테이지 설정 데이터.
@@ -7,6 +8,9 @@ using System;
 [Serializable]
 public class StageData
 {
+    [Header("Obstacles - Ice Cage (0:none, 1:ice)")]
+    public int[] iceCage;
+
     // 스테이지 기본 정보
     public int stageID;         // 스테이지 번호(표시용)
     public int targetScore;     // 목표 점수

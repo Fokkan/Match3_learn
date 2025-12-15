@@ -186,14 +186,19 @@ public class BoardManager : MonoBehaviour
         HandleDebugKeys();
 #endif
 
-        // 힌트 타이머 관리
+        if (isGameOver) return;
+
+        // 애니메이션/셔플/선택중이면 힌트 타이머 정지 + 리셋
+        if (isAnimating || isShuffling || selectedGem != null)
+        {
+            idleTimer = 0f;
+            return;
+        }
+
         idleTimer += Time.deltaTime;
 
-        if (!isShuffling && selectedGem == null)
-        {
-            if (idleTimer >= hintDelay)
-                ShowHintIfPossible();
-        }
+        if (idleTimer >= hintDelay)
+            ShowHintIfPossible();
     }
 
     #endregion
@@ -1318,8 +1323,24 @@ public class BoardManager : MonoBehaviour
         {
             for (int y = 0; y < height; y++)
             {
-                if (gems[x, y] == null) continue;
+                Gem g = gems[x, y];
+                if (g == null) continue;
 
+                // ===== 핵심: 특수젬이 하나라도 인접해 있으면
+                // 너의 룰/스페셜 조합 규칙상 "스왑 = 액션"이므로 무브가 있다고 본다 =====
+                if (g.IsSpecial)
+                {
+                    // 오른쪽
+                    if (x < width - 1 && gems[x + 1, y] != null) return true;
+                    // 위쪽
+                    if (y < height - 1 && gems[x, y + 1] != null) return true;
+                }
+
+                // 인접한 상대가 특수젬이어도 무브
+                if (x < width - 1 && gems[x + 1, y] != null && gems[x + 1, y].IsSpecial) return true;
+                if (y < height - 1 && gems[x, y + 1] != null && gems[x, y + 1].IsSpecial) return true;
+
+                // ===== 기존: 일반젬끼리는 매치 가능성으로 판단 =====
                 if (x < width - 1 && gems[x + 1, y] != null)
                 {
                     if (WouldSwapMakeMatch(x, y, x + 1, y))
@@ -1336,6 +1357,132 @@ public class BoardManager : MonoBehaviour
 
         return false;
     }
+    // ===== 연쇄(체인) 폭발 지원 버전 =====
+    // mask로 시작해서, 지워지는 도중 포함된 특수젬이 있으면
+    // 그 특수젬의 범위를 추가로 확장한 뒤 최종적으로 한 번에 제거한다.
+    private int ClearByMaskWithChain(bool[,] initialMask)
+    {
+        bool[,] finalMask = new bool[width, height];
+        Queue<Vector2Int> q = new Queue<Vector2Int>();
+
+        // 초기 마스크 복사 + 큐 초기화
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (!initialMask[x, y]) continue;
+                finalMask[x, y] = true;
+                q.Enqueue(new Vector2Int(x, y));
+            }
+        }
+
+        // 1) 확장 단계: 특수젬이면 범위를 추가로 finalMask에 반영
+        while (q.Count > 0)
+        {
+            Vector2Int p = q.Dequeue();
+            int x = p.x;
+            int y = p.y;
+
+            Gem g = gems[x, y];
+            if (g == null) continue;
+
+            // ColorBomb은 “연쇄로 터질 때” 룰이 복잡해질 수 있어서,
+            // 여기서는 기본적으로 추가 확장은 하지 않음(필요하면 규칙 확장 가능).
+            if (!g.IsSpecial) continue;
+            if (g.IsColorBomb) continue;
+
+            if (g.IsRowBomb)
+            {
+                for (int xx = 0; xx < width; xx++)
+                {
+                    if (!finalMask[xx, y])
+                    {
+                        finalMask[xx, y] = true;
+                        q.Enqueue(new Vector2Int(xx, y));
+                    }
+                }
+            }
+            else if (g.IsColBomb)
+            {
+                for (int yy = 0; yy < height; yy++)
+                {
+                    if (!finalMask[x, yy])
+                    {
+                        finalMask[x, yy] = true;
+                        q.Enqueue(new Vector2Int(x, yy));
+                    }
+                }
+            }
+            else if (g.IsWrappedBomb)
+            {
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    int nx = x + dx;
+                    if (nx < 0 || nx >= width) continue;
+
+                    for (int dy = -1; dy <= 1; dy++)
+                    {
+                        int ny = y + dy;
+                        if (ny < 0 || ny >= height) continue;
+
+                        if (!finalMask[nx, ny])
+                        {
+                            finalMask[nx, ny] = true;
+                            q.Enqueue(new Vector2Int(nx, ny));
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2) 제거 단계: finalMask를 실제로 삭제
+        int cleared = 0;
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (!finalMask[x, y]) continue;
+                if (gems[x, y] == null) continue;
+
+                Gem g = gems[x, y];
+                gems[x, y] = null;
+                cleared++;
+
+                int popupScore = baseScorePerGem;
+                SpawnScorePopupAtWorld(popupScore, g.transform.position);
+                PlaySfx(matchClip);
+
+                if (matchEffectPrefab != null)
+                {
+                    Vector3 fxPos = g.transform.position;
+                    Instantiate(matchEffectPrefab, fxPos, Quaternion.identity);
+                }
+
+                Transform t = g.transform;
+                t.DOKill();
+                t.localScale = Vector3.one * 0.8f;
+
+                Sequence popSeq = DOTween.Sequence();
+                popSeq.Append(
+                    t.DOScale(1.25f, popDuration * 0.4f)
+                     .SetEase(Ease.OutBack)
+                )
+                .Append(
+                    t.DOScale(0f, popDuration * 0.6f)
+                     .SetEase(Ease.InBack)
+                )
+                .OnComplete(() =>
+                {
+                    Destroy(g.gameObject);
+                });
+            }
+        }
+
+        if (cleared > 0) UpdateScoreUI();
+        return cleared;
+    }
+
 
     private void ClearHint()
     {
@@ -1792,7 +1939,7 @@ public class BoardManager : MonoBehaviour
                     if (gems[x, y] != null)
                         mask[x, y] = true;
 
-            return ClearByMask(mask);
+            return ClearByMaskWithChain(mask);
         }
 
         // ColorBomb + Normal → 해당 색 전체 삭제
@@ -1805,7 +1952,7 @@ public class BoardManager : MonoBehaviour
                         mask[x, y] = true;
 
             mask[a.x, a.y] = true;
-            return ClearByMask(mask);
+            return ClearByMaskWithChain(mask);
         }
         if (sb == SpecialGemType.ColorBomb && !aSpecial)
         {
@@ -1816,7 +1963,7 @@ public class BoardManager : MonoBehaviour
                         mask[x, y] = true;
 
             mask[b.x, b.y] = true;
-            return ClearByMask(mask);
+            return ClearByMaskWithChain(mask);
         }
 
         // Row + Row → 중심 기준 3줄
@@ -1824,7 +1971,7 @@ public class BoardManager : MonoBehaviour
         {
             int centerRow = a.y;
             MarkRowRange(centerRow, 1);
-            return ClearByMask(mask);
+            return ClearByMaskWithChain(mask);
         }
 
         // Col + Col → 중심 기준 3열
@@ -1832,7 +1979,7 @@ public class BoardManager : MonoBehaviour
         {
             int centerCol = a.x;
             MarkColRange(centerCol, 1);
-            return ClearByMask(mask);
+            return ClearByMaskWithChain(mask);
         }
 
         // Row + Col → 십자 폭발
@@ -1845,7 +1992,7 @@ public class BoardManager : MonoBehaviour
             MarkRow(row);
             MarkCol(col);
 
-            return ClearByMask(mask);
+            return ClearByMaskWithChain(mask);
         }
 
         // Stripe(Row/Col) + WrappedBomb → 별도 처리 함수 사용
@@ -1867,7 +2014,7 @@ public class BoardManager : MonoBehaviour
         {
             int centerRow = (sa == SpecialGemType.RowBomb) ? a.y : b.y;
             MarkRowRange(centerRow, 2);
-            return ClearByMask(mask);
+            return ClearByMaskWithChain(mask);
         }
 
         // Col + Wrapped → Col 중심 5열 폭발
@@ -1876,7 +2023,7 @@ public class BoardManager : MonoBehaviour
         {
             int centerCol = (sa == SpecialGemType.ColBomb) ? a.x : b.x;
             MarkColRange(centerCol, 2);
-            return ClearByMask(mask);
+            return ClearByMaskWithChain(mask);
         }
 
         // Wrapped + Wrapped → 두 위치 중심 3×3 영역 합집합
@@ -1885,7 +2032,7 @@ public class BoardManager : MonoBehaviour
             Mark3x3(mask, a.x, a.y);
             Mark3x3(mask, b.x, b.y);
 
-            return ClearByMask(mask);
+            return ClearByMaskWithChain(mask);
         }
 
         // ColorBomb + Wrapped → 해당 색 젬 일부를 래핑 폭발로 처리
@@ -1934,11 +2081,14 @@ public class BoardManager : MonoBehaviour
             mask[colorGem.x, colorGem.y] = true;
             mask[wrappedGem.x, wrappedGem.y] = true;
 
-            return ClearByMask(mask);
+            return ClearByMaskWithChain(mask);
         }
 
         return 0;
     }
+
+   
+
 
     /// <summary>
     /// 중심 (cx,cy)를 포함한 3×3 영역을 mask에 표시한다.
@@ -2214,95 +2364,32 @@ public class BoardManager : MonoBehaviour
     {
         if (bomb == null) return 0;
 
-        int cleared = 0;
+        bool[,] mask = new bool[width, height];
 
         if (bomb.IsRowBomb)
         {
             int row = bomb.y;
             for (int x = 0; x < width; x++)
-            {
-                if (gems[x, row] == null) continue;
-
-                Gem g = gems[x, row];
-                if (g == null) continue;
-
-                gems[x, row] = null;
-                cleared++;
-
-                int popupScore = baseScorePerGem;
-                SpawnScorePopupAtWorld(popupScore, g.transform.position);
-                PlaySfx(matchClip);
-
-                if (matchEffectPrefab != null)
-                {
-                    Vector3 fxPos = g.transform.position;
-                    Instantiate(matchEffectPrefab, fxPos, Quaternion.identity);
-                }
-
-                Transform t = g.transform;
-                t.DOKill();
-                t.localScale = Vector3.one * 0.8f;
-
-                Sequence popSeq = DOTween.Sequence();
-                popSeq.Append(
-                    t.DOScale(1.25f, popDuration * 0.4f)
-                     .SetEase(Ease.OutBack)
-                )
-                .Append(
-                    t.DOScale(0f, popDuration * 0.6f)
-                     .SetEase(Ease.InBack)
-                )
-                .OnComplete(() =>
-                {
-                    Destroy(g.gameObject);
-                });
-            }
+                if (gems[x, row] != null)
+                    mask[x, row] = true;
         }
         else if (bomb.IsColBomb)
         {
             int col = bomb.x;
             for (int y = 0; y < height; y++)
-            {
-                if (gems[col, y] == null) continue;
-
-                Gem g = gems[col, y];
-                if (g == null) continue;
-
-                gems[col, y] = null;
-                cleared++;
-
-                int popupScore = baseScorePerGem;
-                SpawnScorePopupAtWorld(popupScore, g.transform.position);
-                PlaySfx(matchClip);
-
-                if (matchEffectPrefab != null)
-                {
-                    Vector3 fxPos = g.transform.position;
-                    Instantiate(matchEffectPrefab, fxPos, Quaternion.identity);
-                }
-
-                Transform t = g.transform;
-                t.DOKill();
-                t.localScale = Vector3.one * 0.8f;
-
-                Sequence popSeq = DOTween.Sequence();
-                popSeq.Append(
-                    t.DOScale(1.25f, popDuration * 0.4f)
-                     .SetEase(Ease.OutBack)
-                )
-                .Append(
-                    t.DOScale(0f, popDuration * 0.6f)
-                     .SetEase(Ease.InBack)
-                )
-                .OnComplete(() =>
-                {
-                    Destroy(g.gameObject);
-                });
-            }
+                if (gems[col, y] != null)
+                    mask[col, y] = true;
+        }
+        else
+        {
+            return 0;
         }
 
-        return cleared;
+        // ★ 여기서 체인 클리어를 사용해야,
+        // 줄에 포함된 Wrapped/Stripe 등이 “연쇄로” 같이 확장되어 터진다.
+        return ClearByMaskWithChain(mask);
     }
+
 
     #endregion
 
