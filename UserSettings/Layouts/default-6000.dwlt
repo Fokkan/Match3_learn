@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1920
     height: 989
   m_ShowMode: 4
-  m_Title: Hierarchy
+  m_Title: Game
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -120,7 +120,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 102
+  controlID: 46
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -225,7 +225,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 8096, y: 16192}
   vertical: 1
-  controlID: 48
+  controlID: 47
   draggingID: 0
 --- !u!114 &10
 MonoBehaviour:
@@ -327,9 +327,9 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 1920
-    y: 161
+    y: 206
     width: 906
-    height: 825
+    height: 780
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -1134,9 +1134,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 
+      m_SelectedIDs: 8cb30000
       m_LastClickedID: 0
-      m_ExpandedIDs: 6cbfffff7ebfffff36c2ffff60d3ffffe2ebfffff4ebffffa8eeffffeafaffff2ae80000bee80000
+      m_ExpandedIDs: 5eebffff70ebffff22eeffff08fbffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1208,7 +1208,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/sprites
+    - Assets/Prefabs
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1226,7 +1226,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: b0230000
     m_LastClickedID: 9136
-    m_ExpandedIDs: 00000000f8b30000feb3000000b40000beb50000c0b50000c2b50000c4b50000c6b50000
+    m_ExpandedIDs: 00000000fab3000000b4000002b40000c0b50000c2b50000c4b50000c6b50000c8b50000cab50000ccb50000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1252,10 +1252,10 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_AssetTreeState:
-    scrollPos: {x: 0, y: 315}
+    scrollPos: {x: 0, y: 863}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: ffffffff00000000f8b30000feb3000000b40000beb50000c0b50000c2b50000c4b50000c6b5000072b60000eaf60000
+    m_ExpandedIDs: ffffffff00000000c4b30000fab3000000b4000002b40000c0b50000c2b50000c4b50000c6b50000c8b50000cab50000ccb50000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 

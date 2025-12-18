@@ -42,7 +42,12 @@ public class Gem : MonoBehaviour
 
     [Header("Sprite Settings")]
     public SpriteRenderer sr;        // 인스펙터에서 SpriteRenderer 연결
+
+    // normalSprite는 "현재 type의 일반 젬 스프라이트"를 의미한다.
+    // (스페셜 해제 시 돌아갈 원본)
     public Sprite normalSprite;
+
+    // 공통 스페셜 스프라이트(타입별이 없을 때 대체)
     public Sprite rowBombSprite;
     public Sprite colBombSprite;
     public Sprite wrappedBombSprite;
@@ -67,6 +72,7 @@ public class Gem : MonoBehaviour
 
         originalScale = transform.localScale;
 
+        // baseColor는 "색상 보정용 기준"만 유지
         if (sr != null)
         {
             baseColor = sr.color;
@@ -92,17 +98,15 @@ public class Gem : MonoBehaviour
         this.y = y;
         this.type = type;
 
-        if (sr == null)
-            sr = GetComponent<SpriteRenderer>();
+        EnsureSpriteRenderer();
 
-        if (board != null && board.gemSprites != null &&
-            type >= 0 && type < board.gemSprites.Length)
-        {
-            sr.sprite = board.gemSprites[type];
-        }
+        // "일반 스프라이트" 지정
+        normalSprite = ResolveNormalSprite(type);
 
-        normalSprite = sr.sprite;
+        // 초기 상태는 Normal
         specialType = SpecialGemType.None;
+
+        ApplyVisualByState();
     }
 
     /// <summary>
@@ -169,19 +173,22 @@ public class Gem : MonoBehaviour
 
     /// <summary>
     /// 선택/힌트 등으로 변경된 시각 상태를 초기값으로 되돌린다.
+    /// 주의: 스프라이트 자체는 "현재 상태(특수/일반)"를 유지해야 한다.
+    ///       따라서 ResetVisual은 색/스케일/tween만 리셋한다.
     /// </summary>
     public void ResetVisual()
     {
-        if (sr == null)
-            sr = GetComponent<SpriteRenderer>();
+        EnsureSpriteRenderer();
         if (sr == null) return;
 
+        // 트윈 정리
         sr.DOKill();
-        if (selectTween != null) selectTween.Kill();
-        if (hintTween != null) hintTween.Kill();
-
+        if (selectTween != null) { selectTween.Kill(); selectTween = null; }
+        if (hintTween != null) { hintTween.Kill(); hintTween = null; }
         transform.DOKill();
 
+        // 색/스케일만 복구 (스프라이트는 건드리지 않음)
+        baseColor.a = 1f;
         sr.color = baseColor;
         transform.localScale = originalScale;
     }
@@ -192,8 +199,7 @@ public class Gem : MonoBehaviour
     /// </summary>
     public void SetSelected(bool selected)
     {
-        if (sr == null)
-            sr = GetComponent<SpriteRenderer>();
+        EnsureSpriteRenderer();
         if (sr == null) return;
 
         if (selectTween != null)
@@ -210,9 +216,13 @@ public class Gem : MonoBehaviour
 
         ResetVisual();
 
+        // 선택은 색만 처리(스프라이트 유지)
         Color c = baseColor * 1.2f;
         c.a = 1f;
         sr.color = c;
+
+        // 원하면 선택 스케일도 쓰고 싶을 때(현재는 색만 유지)
+        // selectTween = transform.DOScale(originalScale * selectScale, 0.12f).SetEase(Ease.OutQuad);
     }
 
     /// <summary>
@@ -220,8 +230,7 @@ public class Gem : MonoBehaviour
     /// </summary>
     public void PlayHintEffect()
     {
-        if (sr == null)
-            sr = GetComponent<SpriteRenderer>();
+        EnsureSpriteRenderer();
         if (sr == null) return;
 
         ResetVisual();
@@ -235,8 +244,7 @@ public class Gem : MonoBehaviour
     /// </summary>
     public void StopHintEffect()
     {
-        if (sr == null)
-            sr = GetComponent<SpriteRenderer>();
+        EnsureSpriteRenderer();
         if (sr == null) return;
 
         if (hintTween != null)
@@ -256,12 +264,76 @@ public class Gem : MonoBehaviour
     public void SetSpecial(SpecialGemType newType)
     {
         specialType = newType;
+        ApplyVisualByState();
+    }
 
+    /// <summary>
+    /// 셔플 등에서 강제로 타입/스페셜을 세팅할 때 사용하는 함수.
+    /// - type 변경 → normalSprite 갱신
+    /// - special 반영
+    /// </summary>
+    public void ForceSetType(int newType, SpecialGemType special = SpecialGemType.None)
+    {
+        type = newType;
+
+        // type이 바뀌면 normalSprite(일반 스프라이트 기준)도 함께 바뀌어야 한다.
+        normalSprite = ResolveNormalSprite(newType);
+
+        specialType = special;
+        ApplyVisualByState();
+    }
+
+    /// <summary>
+    /// Gem 클릭 시 BoardManager에 위임.
+    /// (모바일 터치 시에는 Raycast 기반으로 처리 가능)
+    /// </summary>
+    private void OnMouseDown()
+    {
+        if (board != null)
+        {
+            board.OnGemClicked(this);
+        }
+    }
+
+    // =========================
+    // Internal Helpers
+    // =========================
+
+    private void EnsureSpriteRenderer()
+    {
         if (sr == null)
             sr = GetComponent<SpriteRenderer>();
-        if (sr == null)
-            return;
+    }
 
+    /// <summary>
+    /// "현재 type의 일반 스프라이트"를 얻는다.
+    /// board.gemSprites가 유효하면 그걸 사용하고,
+    /// 없으면 현재 sr.sprite 또는 normalSprite를 fallback으로 사용한다.
+    /// </summary>
+    private Sprite ResolveNormalSprite(int t)
+    {
+        EnsureSpriteRenderer();
+
+        if (board != null && board.gemSprites != null &&
+            t >= 0 && t < board.gemSprites.Length &&
+            board.gemSprites[t] != null)
+        {
+            return board.gemSprites[t];
+        }
+
+        // fallback
+        if (sr != null && sr.sprite != null)
+            return sr.sprite;
+
+        return normalSprite;
+    }
+
+    /// <summary>
+    /// 현재 (type + specialType)에 맞는 스프라이트를 결정한다.
+    /// </summary>
+    private Sprite ResolveSpriteByState()
+    {
+        // 기본은 normal
         Sprite target = normalSprite;
 
         switch (specialType)
@@ -281,6 +353,10 @@ public class Gem : MonoBehaviour
                 {
                     target = rowBombSprite;
                 }
+                else
+                {
+                    target = normalSprite;
+                }
                 break;
 
             case SpecialGemType.ColBomb:
@@ -294,53 +370,46 @@ public class Gem : MonoBehaviour
                 {
                     target = colBombSprite;
                 }
+                else
+                {
+                    target = normalSprite;
+                }
                 break;
 
             case SpecialGemType.WrappedBomb:
-                if (wrappedBombSprite != null)
-                    target = wrappedBombSprite;
+                target = (wrappedBombSprite != null) ? wrappedBombSprite : normalSprite;
                 break;
 
             case SpecialGemType.ColorBomb:
-                if (colorBombSprite != null)
-                    target = colorBombSprite;
+                target = (colorBombSprite != null) ? colorBombSprite : normalSprite;
                 break;
         }
 
+        return target;
+    }
+
+    /// <summary>
+    /// (type + specialType) 기준으로 스프라이트/색상을 안전하게 재적용한다.
+    /// 선택/힌트 트윈에 의해 색이 깨지는 것까지 여기서 방어한다.
+    /// </summary>
+    private void ApplyVisualByState()
+    {
+        EnsureSpriteRenderer();
+        if (sr == null) return;
+
+        // 선택/힌트 트윈이 스프라이트 적용을 방해하지 않도록 리셋
+        // (스프라이트는 아래에서 다시 세팅)
+        if (hintTween != null) { hintTween.Kill(); hintTween = null; }
+        if (selectTween != null) { selectTween.Kill(); selectTween = null; }
+        sr.DOKill();
+
+        // 스프라이트 적용
+        Sprite target = ResolveSpriteByState();
         if (target != null)
             sr.sprite = target;
-    }
 
-    /// <summary>
-    /// 셔플 등에서 강제로 타입/스페셜을 세팅할 때 사용하는 함수.
-    /// 기본 스프라이트 갱신 후 SetSpecial을 통해 스페셜 반영.
-    /// </summary>
-    public void ForceSetType(int newType, SpecialGemType special = SpecialGemType.None)
-    {
-        type = newType;
-
-        if (sr == null)
-            sr = GetComponent<SpriteRenderer>();
-
-        if (board != null && board.gemSprites != null &&
-            newType >= 0 && newType < board.gemSprites.Length)
-        {
-            sr.sprite = board.gemSprites[newType];
-            normalSprite = sr.sprite;
-        }
-
-        SetSpecial(special);
-    }
-
-    /// <summary>
-    /// Gem 클릭 시 BoardManager에 위임.
-    /// (모바일 터치 시에는 Raycast 기반으로 처리 가능)
-    /// </summary>
-    private void OnMouseDown()
-    {
-        if (board != null)
-        {
-            board.OnGemClicked(this);
-        }
+        // 컬러는 baseColor로 정규화
+        baseColor.a = 1f;
+        sr.color = baseColor;
     }
 }
