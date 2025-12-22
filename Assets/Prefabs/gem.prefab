@@ -177,5 +177,14 @@ MonoBehaviour:
   - {fileID: -4111538694705584200, guid: 1628f1cfd815d8c4fa3eff81224a8dc6, type: 3}
   - {fileID: -7263603338652284068, guid: 1628f1cfd815d8c4fa3eff81224a8dc6, type: 3}
   - {fileID: 5561449960679961381, guid: 1628f1cfd815d8c4fa3eff81224a8dc6, type: 3}
+  wrappedBombSpritesByType:
+  - {fileID: 8300472903075413946, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
+  - {fileID: -2570921443165173794, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
+  - {fileID: -4117205911161715162, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
+  - {fileID: 5103085101247819692, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
+  - {fileID: -5116747602723235568, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
+  - {fileID: -3819975557425584777, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
+  - {fileID: 6259512626180817734, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
+  - {fileID: 5856854927530393958, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
   selectScale: 1.15
   fallDuration: 0.25

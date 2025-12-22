@@ -5381,15 +5381,6 @@ MonoBehaviour:
   - {fileID: 2011360779, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
   - {fileID: -2049878295, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
   - {fileID: -421709644, guid: 52fc6deb55e7de646baccf1fc96f3e17, type: 3}
-  wrappedBombSprites:
-  - {fileID: 8300472903075413946, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
-  - {fileID: -2570921443165173794, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
-  - {fileID: -4117205911161715162, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
-  - {fileID: 5103085101247819692, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
-  - {fileID: -5116747602723235568, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
-  - {fileID: -3819975557425584777, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
-  - {fileID: 6259512626180817734, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
-  - {fileID: 5856854927530393958, guid: 347ce0b7e2c52a841aba7864fac36d4e, type: 3}
   scoreText: {fileID: 329668528}
   baseScorePerGem: 10
   popDuration: 0.45
@@ -5432,6 +5423,11 @@ MonoBehaviour:
   popupRandomOffsetX: 10
   popupRandomOffsetY: 4
   hintDelay: 5
+  icePrefab: {fileID: 7396713863783702617, guid: b986c736a10eb2046947fc412f2a1e14, type: 3}
+  stage4IceCells:
+  - {x: 3, y: 3}
+  - {x: 4, y: 3}
+  - {x: 5, y: 3}
 --- !u!224 &2065945594
 RectTransform:
   m_ObjectHideFlags: 0

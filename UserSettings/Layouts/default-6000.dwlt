@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1920
     height: 989
   m_ShowMode: 4
-  m_Title: Game
+  m_Title: Hierarchy
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -1134,9 +1134,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 8cb30000
+      m_SelectedIDs: 
       m_LastClickedID: 0
-      m_ExpandedIDs: 5eebffff70ebffff22eeffff08fbffff
+      m_ExpandedIDs: 96a2ffff02fbffff48b2000012b3000032b3000048c9000012ca000032ca0000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1153,7 +1153,7 @@ MonoBehaviour:
         m_OriginalEventType: 11
         m_IsRenamingFilename: 0
         m_TrimLeadingAndTrailingWhitespace: 0
-        m_ClientGUIView: {fileID: 7}
+        m_ClientGUIView: {fileID: 10}
       m_SearchString: 
     m_ExpandedScenes: []
     m_CurrenRootInstanceID: 0
@@ -1208,7 +1208,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Prefabs
+    - Assets/sprites
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1226,7 +1226,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: b0230000
     m_LastClickedID: 9136
-    m_ExpandedIDs: 00000000fab3000000b4000002b40000c0b50000c2b50000c4b50000c6b50000c8b50000cab50000ccb50000
+    m_ExpandedIDs: 00000000f8b30000fab3000000b4000002b40000c0b50000c2b50000c4b50000c6b50000c8b50000cab50000ccb50000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1252,10 +1252,10 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_AssetTreeState:
-    scrollPos: {x: 0, y: 863}
+    scrollPos: {x: 0, y: 120}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: ffffffff00000000c4b30000fab3000000b4000002b40000c0b50000c2b50000c4b50000c6b50000c8b50000cab50000ccb50000
+    m_ExpandedIDs: ffffffff00000000b2b30000f8b30000fab3000000b4000002b40000c0b50000c2b50000c4b50000c6b50000c8b50000cab50000ccb50000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 

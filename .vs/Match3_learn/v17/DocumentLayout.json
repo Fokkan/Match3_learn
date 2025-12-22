@@ -3,7 +3,7 @@
   "WorkspaceRootPath": "C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\assets\\scripts\\boardmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|c:\\myunityproject\\match3\\match3_game_1\\match3_learn\\assets\\scripts\\boardmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\boardmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
@@ -11,7 +11,7 @@
       "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|c:\\myunityproject\\match3\\match3_game_1\\match3_learn\\assets\\scripts\\stagedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\assets\\scripts\\stagedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stagedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
@@ -26,8 +26,21 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 0,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "BoardManager.cs",
+              "DocumentMoniker": "C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\Assets\\Scripts\\BoardManager.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\BoardManager.cs",
+              "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\Assets\\Scripts\\BoardManager.cs",
+              "RelativeToolTip": "Assets\\Scripts\\BoardManager.cs",
+              "ViewState": "AgIAABcFAAAAAAAAAAAvwDQFAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-22T07:50:57.188Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Document",
               "DocumentIndex": 2,
@@ -38,8 +51,7 @@
               "RelativeToolTip": "Assets\\Scripts\\StageData.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-15T05:54:13.187Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-15T05:54:13.187Z"
             },
             {
               "$type": "Document",
@@ -61,22 +73,9 @@
               "RelativeDocumentMoniker": "Assets\\Scripts\\Gem.cs",
               "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\Assets\\Scripts\\Gem.cs",
               "RelativeToolTip": "Assets\\Scripts\\Gem.cs",
-              "ViewState": "AgIAAHgBAAAAAAAAAAAuwJ8BAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAALEAAAAAAAAAAAArwMcAAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-09T02:29:44.688Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "BoardManager.cs",
-              "DocumentMoniker": "C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\Assets\\Scripts\\BoardManager.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\BoardManager.cs",
-              "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\Assets\\Scripts\\BoardManager.cs",
-              "RelativeToolTip": "Assets\\Scripts\\BoardManager.cs",
-              "ViewState": "AgIAADYHAAAAAAAAAAAuwF0HAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-09T01:18:32.133Z",
               "EditorCaption": ""
             }
           ]
