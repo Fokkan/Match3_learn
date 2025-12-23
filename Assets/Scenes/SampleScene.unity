@@ -5428,6 +5428,41 @@ MonoBehaviour:
   - {x: 3, y: 3}
   - {x: 4, y: 3}
   - {x: 5, y: 3}
+  iceBreakDuration: 0.18
+  icePunchScale: 0.16
+  iceBreakFxPrefab: {fileID: 0}
+  iceBreakClip: {fileID: 0}
+  iceCrackSprites:
+  - {fileID: 21300000, guid: 753c373d5482a284689684fdc61ecfb4, type: 3}
+  - {fileID: 21300000, guid: 285aaa43a37dcb240b5947e33dfbe278, type: 3}
+  - {fileID: 21300000, guid: fb4c47cf738c81b44905ec10720442fc, type: 3}
+  iceCrackStepDelay: 0.06
+  iceCrack1Clip: {fileID: 8300000, guid: 325eaeb4de86deb43affb7551eea0da9, type: 3}
+  iceCrack2Clip: {fileID: 8300000, guid: 4120ef3d92c8c7f469876494b330b483, type: 3}
+  iceShatterClip: {fileID: 8300000, guid: 0c97bb7c2ce4d7242876672efb79ff9f, type: 3}
+  iceFlashIn: 0.04
+  iceFlashOut: 0.08
+  iceFinalCrackHold: 0.06
+  useIceCameraShake: 1
+  shakeTarget: {fileID: 0}
+  iceShakeDuration: 0.12
+  iceShakeStrength: 0.12
+  iceShakeVibrato: 12
+  iceBreakScore: 20
+  showIceBreakScorePopup: 1
+  iceSortingOrder: 10
+  iceBreakFxSortingOrder: 30
+  limitIceClustering: 1
+  iceMaxAdjacent: 1
+  avoidIce2x2: 1
+  iceMaxClusterSize: 4
+  iceLimitToOneHitPerMove: 1
+  useRandomIce: 1
+  iceCountStage4: 6
+  iceCountPerStage: 2
+  iceMaxCount: 20
+  deterministicByStage: 1
+  randomSeedOffset: 12345
 --- !u!224 &2065945594
 RectTransform:
   m_ObjectHideFlags: 0

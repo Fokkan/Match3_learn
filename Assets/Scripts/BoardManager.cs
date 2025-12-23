@@ -99,6 +99,7 @@ public class BoardManager : MonoBehaviour
     [Header("Hint Settings")]
     public float hintDelay = 3f; // 최소 3초 이상 권장
 
+
     #endregion
 
     #region Private Fields
@@ -111,6 +112,7 @@ public class BoardManager : MonoBehaviour
 
     private ObstacleType[,] obstacles;
     private GameObject[,] iceObjects;
+    private int[,] iceHp; // 크랙 단계용 (예: 1~(iceCrackSprites.Length-1))
 
     private Gem[,] gems;
     private Gem selectedGem = null;
@@ -127,7 +129,241 @@ public class BoardManager : MonoBehaviour
     private Gem hintGemA = null;
     private Gem hintGemB = null;
 
-    private int currentComboForPopup = 1;
+    [Header("Ice Break VFX")]
+    public float iceBreakDuration = 0.18f;
+    public float icePunchScale = 0.16f;
+    public GameObject iceBreakFxPrefab;   // 선택
+    public AudioClip iceBreakClip;        // 선택
+    public Sprite[] iceCrackSprites;   // 0=멀쩡, 1=크랙1, 2=크랙2(선택)
+    public float iceCrackStepDelay = 0.06f;
+
+    [Header("Ice SFX (Split)")]
+    public AudioClip iceCrack1Clip;    // 0 -> 1
+    public AudioClip iceCrack2Clip;    // 1 -> 2 (완전크랙 프레임)
+    public AudioClip iceShatterClip;   // 최종 파괴(파편/사라짐)
+
+    [Header("Ice Flash")]
+    public float iceFlashIn = 0.04f;        // 흰색으로 가는 시간
+    public float iceFlashOut = 0.08f;       // 원래 색으로 돌아오는 시간
+    public float iceFinalCrackHold = 0.06f; // 완전크랙(2) 프레임 유지 시간
+
+    [Header("Camera Shake (Ice Shatter)")]
+    public bool useIceCameraShake = true;
+    public Transform shakeTarget;           // 비우면 Camera.main.transform 사용
+    public float iceShakeDuration = 0.12f;
+    public float iceShakeStrength = 0.12f;
+    public int iceShakeVibrato = 12;
+
+    [Header("Ice Break Score")]
+    public int iceBreakScore = 20;
+    public bool showIceBreakScorePopup = true;
+
+    [Header("Ice Sorting")]
+    public int iceSortingOrder = 10;          // 젬보다 위에 보이게
+    public int iceBreakFxSortingOrder = 30;   // 파편 FX는 더 위에
+
+    [Header("Ice Cluster Limit (Stage >= 4 Random)")]
+    public bool limitIceClustering = true;
+    public int iceMaxAdjacent = 1;            // 0=절대 붙지 않게, 1=살짝만 붙게
+    public bool avoidIce2x2 = true;           // 2x2 얼음 블록 방지
+    public int iceMaxClusterSize = 4;         // 연결된 얼음 덩어리 최대 크기
+
+    [Header("Ice Hit Limit")]
+    public bool iceLimitToOneHitPerMove = true; // ON이면 "한 턴에 ICE는 1회만 데미지"
+    private int[,] iceHitStamp;
+    private int iceHitStampId = 1;
+
+    [Header("Ice Spawn (Stage >= 4)")]
+    public bool useRandomIce = true;
+    public int iceCountStage4 = 6;      // 스테이지4 기본 얼음 개수
+    public int iceCountPerStage = 2;    // 스테이지 올라갈 때마다 추가
+    public int iceMaxCount = 20;        // 상한
+    public bool deterministicByStage = true; // 같은 스테이지면 같은 배치
+    public int randomSeedOffset = 12345;
+    // ===== StageData → Ice Apply =====
+
+    private struct IceClusterRules
+    {
+        public bool limitClustering;
+        public int maxAdjacent;      // 0이면 인접 금지
+        public bool avoid2x2;
+        public int maxClusterSize;   // 연결 덩어리 최대
+    }
+
+    /// <summary>
+    /// StageData에 정의된 iceCage / obstacleCount / obstacleLevel로 ICE를 배치한다.
+    /// 우선순위: iceCage(고정) > obstacleCount(랜덤)
+    /// </summary>
+    private void ApplyIceFromStageData(StageData s)
+    {
+        // ICE 시스템이 없는 빌드/씬에서도 크래시 나지 않게 방어
+        if (s == null) return;
+
+        if (obstacles == null || iceObjects == null || iceHp == null) InitIceArrays();
+
+        // StageData에서 방해요소 사용 안 하면 스킵
+        if (!s.useObstacles) return;  // :contentReference[oaicite:2]{index=2}
+
+        // (1) 고정 배치 마스크 우선
+        if (s.iceCage != null && s.iceCage.Length == width * height) // :contentReference[oaicite:3]{index=3}
+        {
+            ApplyIceCageMask_TopLeftOrigin(s.iceCage);
+            return;
+        }
+
+        // (2) 랜덤 배치(개수 기반)
+        if (s.obstacleCount <= 0) return; // :contentReference[oaicite:4]{index=4}
+
+        IceClusterRules rules = GetIceRulesFromLevel(s.obstacleLevel); // :contentReference[oaicite:5]{index=5}
+
+        // 결정적 랜덤(같은 스테이지면 같은 배치) 권장: seed에 stageID 활용
+        int seed = s.stageID * 1000 + 12345; // :contentReference[oaicite:6]{index=6}
+        PlaceRandomIceWithRules(s.obstacleCount, seed, rules);
+    }
+
+    /// <summary>
+    /// iceCage 배열을 보드에 매핑해서 ICE 배치.
+    /// 기본은 “Top-Left 원점(인간이 읽기 쉬운 방식)”
+    /// index 0..width-1 => 최상단 행, 다음이 그 아래 행.
+    /// </summary>
+    private void ApplyIceCageMask_TopLeftOrigin(int[] mask)
+    {
+        for (int i = 0; i < mask.Length; i++)
+        {
+            if (mask[i] == 0) continue;
+
+            int x = i % width;
+            int yFromTop = i / width;
+            int y = (height - 1) - yFromTop; // Top-Left → (0, height-1)
+
+            // 이미 ICE면 스킵
+            if (IsIce(x, y)) continue;
+
+            PlaceIceAt(x, y);
+        }
+    }
+
+    /// <summary>
+    /// obstacleLevel(0~3)을 “뭉침 정도” 룰로 변환.
+    /// 레벨이 높을수록 덜 붙게(캔디크러시 느낌으로 정리)
+    /// </summary>
+    private IceClusterRules GetIceRulesFromLevel(int level)
+    {
+        // 기본값(중간)
+        IceClusterRules r = new IceClusterRules
+        {
+            limitClustering = true,
+            maxAdjacent = 1,
+            avoid2x2 = true,
+            maxClusterSize = 4
+        };
+
+        // level: 0=가장 느슨, 1=약간 느슨, 2=기본, 3=가장 엄격
+        switch (level)
+        {
+            case 0:
+                r.maxAdjacent = 2;
+                r.avoid2x2 = false;
+                r.maxClusterSize = 7;
+                break;
+
+            case 1:
+                r.maxAdjacent = 2;
+                r.avoid2x2 = true;
+                r.maxClusterSize = 6;
+                break;
+
+            case 2:
+                // 기본값 유지
+                break;
+
+            default: // 3 이상
+                r.maxAdjacent = 0;     // 붙지 않게
+                r.avoid2x2 = true;
+                r.maxClusterSize = 2;
+                break;
+        }
+
+        return r;
+    }
+
+    /// <summary>
+    /// 기존 랜덤 배치 로직에 rules를 적용한 버전.
+    /// 네 프로젝트의 “클러스터 제한 함수들”을 재사용하도록 구성.
+    /// </summary>
+    private void PlaceRandomIceWithRules(int count, int seed, IceClusterRules rules)
+    {
+        // 후보 수집
+        List<Vector2Int> candidates = new List<Vector2Int>(width * height);
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (IsIce(x, y)) continue;
+                if (gems != null && gems[x, y] == null) continue;
+                candidates.Add(new Vector2Int(x, y));
+            }
+        }
+
+        if (candidates.Count == 0) return;
+
+        // 결정적 셔플
+        System.Random rng = new System.Random(seed);
+        for (int i = candidates.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (candidates[i], candidates[j]) = (candidates[j], candidates[i]);
+        }
+
+        int placed = 0;
+
+        // 1차: 룰 적용
+        for (int i = 0; i < candidates.Count && placed < count; i++)
+        {
+            var c = candidates[i];
+            if (!CanPlaceIceAtWithRules(c.x, c.y, rules)) continue;
+
+            PlaceIceAt(c.x, c.y);
+            placed++;
+        }
+
+        // 2차 보험: 너무 덜 깔리면 2x2만 피하고 채움
+        if (placed < count)
+        {
+            for (int i = 0; i < candidates.Count && placed < count; i++)
+            {
+                var c = candidates[i];
+                if (IsIce(c.x, c.y)) continue;
+
+                if (rules.avoid2x2 && WouldForm2x2Ice(c.x, c.y)) continue;
+
+                PlaceIceAt(c.x, c.y);
+                placed++;
+            }
+        }
+    }
+
+    /// <summary>
+    /// rules 기반 배치 가능 판정.
+    /// 여기서는 네 프로젝트에 이미 들어간 인접/2x2/클러스터 검사 함수를 재사용한다고 가정.
+    /// (CountAdjacentIce4 / WouldForm2x2Ice / WouldExceedClusterSize 같은 것)
+    /// </summary>
+    private bool CanPlaceIceAtWithRules(int x, int y, IceClusterRules rules)
+    {
+        if (!rules.limitClustering) return true;
+
+        if (rules.maxAdjacent >= 0)
+        {
+            int adj = CountAdjacentIce4(x, y);
+            if (adj > rules.maxAdjacent) return false;
+        }
+
+        if (rules.avoid2x2 && WouldForm2x2Ice(x, y)) return false;
+
+        if (rules.maxClusterSize > 0 && WouldExceedClusterSize(x, y, rules.maxClusterSize)) return false;
+
+        return true;
+    }
 
     #endregion
 
@@ -135,8 +371,9 @@ public class BoardManager : MonoBehaviour
 
     private void Awake()
     {
-        if (boardPlate != null) boardPlate.gameObject.SetActive(false);
-        if (boardGrid != null) boardGrid.gameObject.SetActive(false);
+        // 보드판(plate/grid)은 Awake에서 강제로 끄지 않는다.
+        // 씬에서 필요하면 인스펙터로 비활성화하고,
+        // 게임 시작/LoadStage에서 켜는 흐름으로 관리한다.
     }
 
     private void Start()
@@ -147,12 +384,14 @@ public class BoardManager : MonoBehaviour
             ResetState();
 
             gems = new Gem[width, height];
-            GenerateBoard();
             InitIceArrays();
-            ApplyIceForStage4();
+            GenerateBoard();
+            ApplyIceFromStageData(StageManager.Instance != null ? StageManager.Instance.CurrentStage : null);
 
+
+            ApplyIceForStage(GetStageNumberSafe());
             // 시작 1회 보드 검증(즉시 매치 제거 + 무브 확보)
-            StartCoroutine(ShuffleRoutine(true));
+            StartCoroutine(ShuffleRoutine(force: false));
 
             UpdateScoreUI();
             UpdateGoalUI();
@@ -173,11 +412,7 @@ public class BoardManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.R))
             RestartGame();
-        if (Input.GetKeyDown(KeyCode.F2))
-        {
-            Debug.Log("[TEST] Force ShuffleRoutine(true)");
-            StartCoroutine(ShuffleRoutine(true));
-        }
+ 
 
 #if UNITY_EDITOR
         HandleDebugKeys();
@@ -394,6 +629,32 @@ public class BoardManager : MonoBehaviour
     }
 
     #endregion
+    private void PlayIceFlash(SpriteRenderer sr)
+    {
+        if (sr == null) return;
+
+        // 알파는 유지한 채로 흰색 플래시
+        Color original = sr.color;
+        Color flash = new Color(1f, 1f, 1f, original.a);
+
+        sr.DOKill(); // 색상 트윈 중복 방지
+
+        Sequence seq = DOTween.Sequence();
+        seq.Append(sr.DOColor(flash, iceFlashIn).SetEase(Ease.OutQuad));
+        seq.Append(sr.DOColor(original, iceFlashOut).SetEase(Ease.OutQuad));
+    }
+
+    private void ShakeCameraForIce()
+    {
+        if (!useIceCameraShake) return;
+
+        Transform t = shakeTarget;
+        if (t == null && Camera.main != null) t = Camera.main.transform;
+        if (t == null) return;
+
+        t.DOKill(); // 기존 흔들림 중복 방지
+        t.DOShakePosition(iceShakeDuration, iceShakeStrength, iceShakeVibrato, 90f, false, true);
+    }
 
     #region UI Helpers
 
@@ -580,7 +841,8 @@ public class BoardManager : MonoBehaviour
     {
         if (isAnimating) yield break;
         isAnimating = true;
-
+        //  이번 "턴(스왑 1회)"에서 ICE는 1회만 데미지
+        BeginIceHitWindow();
         PlaySfx(swapClip);
 
         // 1) swap
@@ -727,16 +989,25 @@ public class BoardManager : MonoBehaviour
         score += gained;
         UpdateScoreUI();
     }
-
-    private IEnumerator PostClearRefillAndEnsure()
+    private void AddFlatScore(int amount)
+    {
+        if (amount <= 0) return;
+        score += amount;
+        UpdateScoreUI();
+    }
+        private IEnumerator PostClearRefillAndEnsure()
     {
         RefillBoard();
         yield return new WaitForSeconds(fallWaitTime);
 
-        // 리필 후 즉시 매치가 생기거나 무브가 0이면 셔플(보드 정합성 확보)
-        if (!HasAnyPossibleMove() || HasAnyMatchOnBoard())
-            StartCoroutine(ShuffleRoutine(true));
+        // 리필로 생긴 자연 매치를 끝까지 정리
+        yield return StartCoroutine(ResolveCascadesAfterRefill());
+
+        isAnimating = false;
+        yield break;
     }
+
+
 
     private bool IsColorStripeCombo(Gem a, Gem b)
     {
@@ -835,7 +1106,8 @@ public class BoardManager : MonoBehaviour
 
             for (int x = 0; x < width; x++)
             {
-                int t = (gems[x, y] != null) ? gems[x, y].type : -1;
+                int t = (gems[x, y] != null && !IsIce(x, y)) ? gems[x, y].type : -1;
+
 
                 if (t == runType && t != -1)
                 {
@@ -871,7 +1143,8 @@ public class BoardManager : MonoBehaviour
 
             for (int y = 0; y < height; y++)
             {
-                int t = (gems[x, y] != null) ? gems[x, y].type : -1;
+                int t = (gems[x, y] != null && !IsIce(x, y)) ? gems[x, y].type : -1;
+
 
                 if (t == runType && t != -1)
                 {
@@ -1061,26 +1334,56 @@ public class BoardManager : MonoBehaviour
     {
         for (int x = 0; x < width; x++)
         {
-            int destY = 0;
+            int segmentStart = 0;
 
+            // y를 훑다가 ICE를 만나면, 그 아래 구간만 압축하고 ICE는 건드리지 않는다.
             for (int y = 0; y < height; y++)
             {
-                if (gems[x, y] != null)
-                {
-                    if (y != destY)
-                    {
-                        gems[x, destY] = gems[x, y];
-                        gems[x, destY].SetGridPosition(x, destY);
-                        gems[x, y] = null;
-                    }
-                    destY++;
-                }
+                if (!IsIce(x, y)) continue;
+
+                // ICE 셀은 고정: 만약 gem이 비어있다면 안전하게 하나 생성(원칙상 거의 안 생김)
+                if (gems[x, y] == null)
+                    CreateGemAt(x, y);
+
+                // segmentStart ~ (y-1) 구간만 압축/리필
+                CollapseAndRefillSegment(x, segmentStart, y - 1);
+
+                // 다음 구간은 ICE 위부터 시작
+                segmentStart = y + 1;
             }
 
-            for (int y = destY; y < height; y++)
-                CreateGemAt(x, y);
+            // 마지막 구간 처리
+            CollapseAndRefillSegment(x, segmentStart, height - 1);
         }
     }
+
+    private void CollapseAndRefillSegment(int x, int startY, int endY)
+    {
+        if (startY > endY) return;
+
+        int destY = startY;
+
+        // 1) 내려앉히기(세그먼트 안에서만)
+        for (int y = startY; y <= endY; y++)
+        {
+            if (gems[x, y] == null) continue;
+
+            if (y != destY)
+            {
+                gems[x, destY] = gems[x, y];
+                gems[x, destY].SetGridPosition(x, destY);
+                gems[x, y] = null;
+            }
+            destY++;
+        }
+
+        // 2) 위쪽 빈칸 채우기(세그먼트 안에서만)
+        for (int y = destY; y <= endY; y++)
+        {
+            CreateGemAt(x, y);
+        }
+    }
+
 
     #endregion
 
@@ -1173,6 +1476,10 @@ public class BoardManager : MonoBehaviour
     {
         if (gems == null) return false;
         if (gems[x1, y1] == null || gems[x2, y2] == null) return false;
+    
+        // ICE 칸이 하나라도 포함되면 스왑 불가
+        if (IsIce(x1, y1) || IsIce(x2, y2))
+            return false;
 
         Gem g1 = gems[x1, y1];
         Gem g2 = gems[x2, y2];
@@ -1201,16 +1508,19 @@ public class BoardManager : MonoBehaviour
             {
                 Gem g = gems[x, y];
                 if (g == null) continue;
-
+                //  ICE 칸은 무브 후보에서 제외
+                if (IsIce(x, y)) continue;
                 // 특수젬이 있으면 “스왑=액션” 가능성을 높게 본다(현 프로젝트 룰)
                 if (g.IsSpecial)
                 {
-                    if (x < width - 1 && gems[x + 1, y] != null) return true;
-                    if (y < height - 1 && gems[x, y + 1] != null) return true;
+                    if (x < width - 1 && gems[x + 1, y] != null && !IsIce(x + 1, y)) return true;
+                    if (y < height - 1 && gems[x, y + 1] != null && !IsIce(x, y + 1)) return true;
                 }
 
-                if (x < width - 1 && gems[x + 1, y] != null && gems[x + 1, y].IsSpecial) return true;
-                if (y < height - 1 && gems[x, y + 1] != null && gems[x, y + 1].IsSpecial) return true;
+
+                if (x < width - 1 && gems[x + 1, y] != null && !IsIce(x + 1, y) && gems[x + 1, y].IsSpecial) return true;
+                if (y < height - 1 && gems[x, y + 1] != null && !IsIce(x, y + 1) && gems[x, y + 1].IsSpecial) return true;
+
 
                 if (x < width - 1 && gems[x + 1, y] != null)
                     if (WouldSwapMakeMatch(x, y, x + 1, y)) return true;
@@ -1323,14 +1633,16 @@ public class BoardManager : MonoBehaviour
 
     private void EnsurePlayableBoardImmediate()
     {
-        Debug.Log("[EnsurePlayableBoardImmediate] CALLED"); 
+        // 셔플은 "젬 배치"만 바꾼다. ICE(블로커)는 절대 재생성/재배치하지 않는다.
         int safety = 0;
         while ((HasAnyMatchOnBoard() || !HasAnyPossibleMove()) && safety < 80)
         {
             ShuffleBoardPreserveSpecial();
             safety++;
         }
+
     }
+
 
     private void ShuffleBoardPreserveSpecial()
     {
@@ -1343,9 +1655,18 @@ public class BoardManager : MonoBehaviour
         {
             for (int y = 0; y < height; y++)
             {
-                if (gems[x, y] == null) continue;
-                targets.Add(gems[x, y]);
-                types.Add(gems[x, y].type);
+                Gem g = gems[x, y];
+                if (g == null) continue;
+
+                //  ICE 안의 젬은 고정(셔플로 타입도 바꾸지 않음)
+                if (IsIce(x, y)) continue;
+
+                //  특수젬은 위치/상태 유지(일반젬만 섞기)
+                if (g.IsSpecial) continue;
+
+                targets.Add(g);
+                types.Add(g.type);
+
             }
         }
 
@@ -1393,14 +1714,16 @@ public class BoardManager : MonoBehaviour
         if (shuffleOverlay != null) shuffleOverlay.SetActive(true);
         if (shuffleText != null) shuffleText.gameObject.SetActive(true);
 
-        // ✅ 오버레이가 켜지는 프레임을 보장
+        // 오버레이가 켜지는 프레임 보장
         yield return null;
 
         Debug.Log($"[ShuffleRoutine] overlayActive={(shuffleOverlay != null && shuffleOverlay.activeSelf)} textActive={(shuffleText != null && shuffleText.gameObject.activeSelf)}");
 
         yield return new WaitForSeconds(shuffleMessageTime);
 
-        StartCoroutine(ShuffleRoutine(true));
+        //  여기서 실제 셔플 수행 (재귀 코루틴 호출 금지)
+        EnsurePlayableBoardImmediate();
+
         yield return new WaitForSeconds(0.25f);
 
         Debug.Log("[ShuffleRoutine] Turn overlay OFF");
@@ -1411,7 +1734,39 @@ public class BoardManager : MonoBehaviour
         idleTimer = 0f;
 
         isShuffling = false;
+
     }
+    // 리필 이후 생긴 자연 매치(캐스케이드)를 끝까지 처리한다.
+    // - "턴 1회"에서 moves 감소는 이미 상위에서 처리하므로 여기서 moves를 건드리지 않는다.
+    private IEnumerator ResolveCascadesAfterRefill()
+    {
+        int combo = 0;
+
+        while (true)
+        {
+            //  존재하는 함수명으로 호출해야 함 (CheckMatchesAndClear() 아님)
+            int cleared = CheckMatchesAndClear_WithPromotionsSafe();
+            if (cleared == 0) break;
+
+            combo++;
+            AddScoreForClear(cleared, comboMultiplier: combo);
+
+            // 팝/삭제 연출 대기
+            yield return new WaitForSeconds(popDuration);
+
+            // 리필/낙하 대기
+            RefillBoard();
+            yield return new WaitForSeconds(fallWaitTime);
+        }
+
+        if (combo > 0)
+            ShowComboBanner(combo);
+
+        //  isAnimating은 여기서 건드리지 말고, 호출자가 관리
+        yield break;
+    }
+
+
 
 
     private void AlignShuffleTextToBoard()
@@ -1492,6 +1847,14 @@ public class BoardManager : MonoBehaviour
         if (clip == null) return;
         audioSource.PlayOneShot(clip);
     }
+    private void PlaySfx(AudioClip clip, float volumeScale)
+    {
+        if (audioSource == null) return;
+        if (clip == null) return;
+
+        // PlayOneShot은 AudioSource.volume * volumeScale로 최종 볼륨이 결정됨
+        audioSource.PlayOneShot(clip, Mathf.Clamp(volumeScale, 0f, 2f));
+    }
 
     public void ResetState()
     {
@@ -1521,41 +1884,61 @@ public class BoardManager : MonoBehaviour
         SceneManager.LoadScene(current.buildIndex);
     }
 
-    public void LoadStage(int boardWidth, int boardHeight, int goal, int totalMoves)
+    public void LoadStage(int stageNumber, int w, int h, int goal, int moves)
     {
+        // 1) 기본 세팅
         ClearBoard();
 
-        width = boardWidth;
-        height = boardHeight;
+        width = w;
+        height = h;
+
         targetScore = goal;
-        maxMoves = totalMoves;
+        maxMoves = moves;
 
-        isGameOver = false;
-        score = 0;
-        movesLeft = maxMoves;
+        ResetState();
 
-        ClearHint();
-        HideComboBannerImmediate();
-
-        if (gameOverPanel != null) gameOverPanel.SetActive(false);
-
+        // 2) 보드 생성
         gems = new Gem[width, height];
         GenerateBoard();
-        InitIceArrays();
-        ApplyIceForStage4();
-        StartCoroutine(ShuffleRoutine(true));
 
+        // 3) ICE 배열 먼저 초기화 (중요: ApplyIce 전에!)
+        InitIceArrays();
+
+        // 4) 스테이지 데이터 기반 ICE 배치 (단일 루트로 통일)
+        //    StageManager.CurrentStage가 있다면 그걸 사용
+        if (StageManager.Instance != null && StageManager.Instance.CurrentStage != null)
+        {
+            ApplyIceFromStageData(StageManager.Instance.CurrentStage);
+        }
+        else
+        {
+            // StageData 없으면(디버그/단독 실행) stageNumber 기반 예전 방식이 필요하면 여기서만 선택적으로
+            // ApplyIceForStage(stageNumber);
+            // 지금은 “단일 루트” 원칙이면 그냥 비워도 됨.
+        }
+
+        // 5) 시작 1회 보드 검증(즉시 매치 제거 + 무브 확보)
+        StartCoroutine(ShuffleRoutine(force: false));
+
+        // 6) UI
         UpdateScoreUI();
         UpdateGoalUI();
         UpdateMovesUI();
 
-        AdjustCameraAndBoard();
-
+        // 7) 보드판 보이게 + 사이즈 갱신
         if (boardPlate != null) boardPlate.gameObject.SetActive(true);
         if (boardGrid != null) boardGrid.gameObject.SetActive(true);
 
         UpdateBoardPlate();
+        AdjustCameraAndBoard();
     }
+    // StageManager가 호출하는 4-파라미터 버전(호환용)
+    public void LoadStage(int boardWidth, int boardHeight, int goal, int totalMoves)
+    {
+        // 네가 5-파라미터 LoadStage(스테이지번호 포함)를 쓰고 있다면 그쪽으로 위임
+        LoadStage(GetStageNumberSafe(), boardWidth, boardHeight, goal, totalMoves);
+    }
+
 
     public void OnClickNextStage()
     {
@@ -1570,7 +1953,22 @@ public class BoardManager : MonoBehaviour
     {
         obstacles = new ObstacleType[width, height];
         iceObjects = new GameObject[width, height];
+        iceHp = new int[width, height];
+
+        // ICE "턴 단위" 중복 타격 방지용
+        iceHitStamp = new int[width, height];
+        iceHitStampId = 1;
     }
+    private void BeginIceHitWindow()
+    {
+        if (!iceLimitToOneHitPerMove) return;
+        if (iceHitStamp == null || iceHitStamp.GetLength(0) != width || iceHitStamp.GetLength(1) != height)
+            iceHitStamp = new int[width, height];
+
+        iceHitStampId++;
+        if (iceHitStampId <= 0) iceHitStampId = 1; // overflow 방어
+    }
+
     private Vector3 GridToWorld(int x, int y)
     {
         float ox = (width - 1) * 0.5f;
@@ -1587,38 +1985,417 @@ public class BoardManager : MonoBehaviour
 
         GameObject ice = Instantiate(icePrefab, transform);
         ice.transform.localPosition = GridToWorld(x, y);
+
+        //  젬과 같은 SortingLayer + 젬보다 높은 order
+        int layerId = GetSortingLayerIdFromGemCell(x, y);
+        ApplySortingToRenderers(ice, layerId, iceSortingOrder);
+
         iceObjects[x, y] = ice;
+        // ===== Crack 단계 초기화 =====
+        // 크랙 스프라이트 0,1,2를 쓰면 maxStage=2, HP=2 (2번 맞으면 제거)
+        int maxStage = (iceCrackSprites != null) ? Mathf.Max(0, iceCrackSprites.Length - 1) : 0;
+        iceHp[x, y] = maxStage;
+
+        var sr = ice.GetComponent<SpriteRenderer>();
+        if (sr != null && iceCrackSprites != null && iceCrackSprites.Length > 0)
+        {
+            sr.sprite = iceCrackSprites[0]; // 0단계(멀쩡)
+        }
+
     }
 
+
+    // === ICE hit dedupe: 한 번의 클리어 패스에서 ICE는 1회만 타격 ===
+    private void TryBreakIceOnce(int x, int y, bool[,] hitMask)
+    {
+        if (x < 0 || x >= width || y < 0 || y >= height) return;
+        if (obstacles == null) return;
+        if (obstacles[x, y] != ObstacleType.Ice) return;
+        if (iceLimitToOneHitPerMove && iceHitStamp != null)
+        {
+            if (iceHitStamp[x, y] == iceHitStampId) return;
+            iceHitStamp[x, y] = iceHitStampId;
+        }
+        if (hitMask != null)
+        {
+            if (hitMask[x, y]) return;
+            hitMask[x, y] = true;
+        }
+
+        TryBreakIce(x, y);
+    }
+
+    // 기존: BreakAdjacentIceAt(int x, int y) → dedupe 버전으로 변경
+    private void BreakAdjacentIceAt(int x, int y, bool[,] hitMask)
+    {
+        TryBreakIceOnce(x + 1, y, hitMask);
+        TryBreakIceOnce(x - 1, y, hitMask);
+        TryBreakIceOnce(x, y + 1, hitMask);
+        TryBreakIceOnce(x, y - 1, hitMask);
+    }
+
+    // (안전장치) 혹시 다른 코드가 기존 시그니처를 호출 중이면 컴파일 깨지지 않게 유지
     private void BreakAdjacentIceAt(int x, int y)
     {
-        TryBreakIce(x + 1, y);
-        TryBreakIce(x - 1, y);
-        TryBreakIce(x, y + 1);
-        TryBreakIce(x, y - 1);
+        BreakAdjacentIceAt(x, y, null);
     }
+
 
     private void TryBreakIce(int x, int y)
     {
         if (x < 0 || x >= width || y < 0 || y >= height) return;
+        if (obstacles == null) return;
         if (obstacles[x, y] != ObstacleType.Ice) return;
 
+        GameObject ice = iceObjects[x, y];
+        if (ice == null)
+        {
+            // 오브젝트만 유실된 경우: 데이터 정리
+            obstacles[x, y] = ObstacleType.None;
+            iceHp[x, y] = 0;
+            return;
+        }
+
+        int maxStage = (iceCrackSprites != null) ? Mathf.Max(0, iceCrackSprites.Length - 1) : 0;
+
+        // 크랙 스프라이트가 없으면 기존처럼 즉시 파괴
+        if (maxStage <= 0)
+        {
+            obstacles[x, y] = ObstacleType.None;
+            iceHp[x, y] = 0;
+            iceObjects[x, y] = null;
+
+            AddFlatScore(iceBreakScore);
+            if (showIceBreakScorePopup)
+                SpawnScorePopupAtWorld(iceBreakScore, GridToWorld(x, y));
+
+            StartCoroutine(PlayIceBreakAndDestroy(ice));
+            return;
+        }
+
+        // HP 초기값 보정(혹시 0으로 남아있을 경우)
+        if (iceHp[x, y] <= 0)
+            iceHp[x, y] = maxStage;
+
+        // ===== 1타: HP 감소 =====
+        iceHp[x, y] = Mathf.Clamp(iceHp[x, y] - 1, 0, maxStage);
+
+        // ===== 단계 스프라이트 적용 =====
+        // HP:2 -> index0, HP:1 -> index1, HP:0 -> index2
+        int spriteIndex = Mathf.Clamp(maxStage - iceHp[x, y], 0, maxStage);
+
+        var sr = ice.GetComponent<SpriteRenderer>();
+        if (sr != null && iceCrackSprites != null && spriteIndex < iceCrackSprites.Length)
+            sr.sprite = iceCrackSprites[spriteIndex];
+        PlayIceFlash(sr);
+
+        if (spriteIndex == 1 && iceCrack1Clip != null)
+            PlaySfx(iceCrack1Clip, 1.35f);   // 중간 크랙: 더 잘 들리게
+        else if (spriteIndex == 2 && iceCrack2Clip != null)
+            PlaySfx(iceCrack2Clip, 1.45f);   // 완전 크랙: 더 강하게
+
+        // “금 가는” 피드백(파괴 전)
+        Transform t = ice.transform;
+        t.DOKill();
+        t.DOPunchScale(Vector3.one * (icePunchScale * 0.6f), iceCrackStepDelay, 6, 0.6f);
+
+        // ===== 아직 안 깨짐 =====
+        if (iceHp[x, y] > 0)
+            return;
+
+        // ===== 최종 파괴(HP==0) =====
+        if (iceHp[x, y] > 0) return;
+
+        //  완전크랙(2) 프레임을 잠깐 유지하고 최종 파괴
         obstacles[x, y] = ObstacleType.None;
-        Destroy(iceObjects[x, y]);
         iceObjects[x, y] = null;
-    }
 
-    private void ApplyIceForStage4()
+        AddFlatScore(iceBreakScore);
+        if (showIceBreakScorePopup)
+            SpawnScorePopupAtWorld(iceBreakScore, GridToWorld(x, y));
+
+        StartCoroutine(PlayIceFinalShatterSequence(ice, x, y));
+    }
+    private IEnumerator PlayIceFinalShatterSequence(GameObject ice, int x, int y)
     {
-        // StageManager 없어도 동작하게 단순 처리
-        int stageNumber = 4; // ← 지금은 고정
+        // 완전크랙 프레임이 보일 최소 시간 확보
+        if (iceFinalCrackHold > 0f)
+            yield return new WaitForSeconds(iceFinalCrackHold);
 
-        if (stageNumber < 4) return;
-        if (stage4IceCells == null) return;
+        // 점수/팝업이 TryBreakIce에서 이미 처리중이면 여기서 중복 처리하지 마
+        // (너 코드가 어디서 점수를 주는지에 따라 한쪽만 유지)
 
-        foreach (var c in stage4IceCells)
-            PlaceIceAt(c.x, c.y);
+        StartCoroutine(PlayIceBreakAndDestroy(ice));
     }
+
+
+    private int GetSortingLayerIdFromGemCell(int x, int y)
+    {
+        if (gems != null && x >= 0 && x < width && y >= 0 && y < height)
+        {
+            Gem g = gems[x, y];
+            if (g != null && g.sr != null) return g.sr.sortingLayerID;
+        }
+        return 0; // Default
+    }
+
+    private void ApplySortingToRenderers(GameObject root, int sortingLayerId, int sortingOrder)
+    {
+        if (root == null) return;
+
+        // SpriteRenderer
+        var srs = root.GetComponentsInChildren<SpriteRenderer>(true);
+        foreach (var sr in srs)
+        {
+            sr.sortingLayerID = sortingLayerId;
+            sr.sortingOrder = sortingOrder;
+        }
+
+        // ParticleSystemRenderer
+        var prs = root.GetComponentsInChildren<ParticleSystemRenderer>(true);
+        foreach (var pr in prs)
+        {
+            pr.sortingLayerID = sortingLayerId;
+            pr.sortingOrder = sortingOrder;
+        }
+    }
+
+
+    private IEnumerator PlayIceBreakAndDestroy(GameObject ice)
+    {
+        if (ice == null) yield break;
+
+        //  ice의 sortingLayer를 기준으로 FX를 더 위에 올림
+        int layerId = 0;
+        var iceSr = ice.GetComponent<SpriteRenderer>();
+        if (iceSr != null) layerId = iceSr.sortingLayerID;
+
+        if (iceBreakFxPrefab != null)
+        {
+            GameObject fx = Instantiate(iceBreakFxPrefab, ice.transform.position, Quaternion.identity);
+            ApplySortingToRenderers(fx, layerId, iceBreakFxSortingOrder);
+        }
+
+        //  최종 파괴 사운드(우선순위: iceShatterClip, 없으면 iceBreakClip)
+        if (iceShatterClip != null) PlaySfx(iceShatterClip);
+        else if (iceBreakClip != null) PlaySfx(iceBreakClip);
+
+        //  카메라 흔들림(최종 파괴 때만)
+        ShakeCameraForIce();
+
+
+        Transform t = ice.transform;
+        t.DOKill();
+
+        // 펀치(깨짐 느낌)
+        t.DOPunchScale(Vector3.one * icePunchScale, iceBreakDuration, 6, 0.6f);
+
+        if (iceSr != null)
+        {
+            iceSr.DOKill();
+            iceSr.DOFade(0f, iceBreakDuration);
+        }
+
+        yield return new WaitForSeconds(iceBreakDuration);
+
+        if (ice != null) Destroy(ice);
+    }
+    
+
+    private int GetStageNumberSafe()
+    {
+        // StageManager 기준: currentStageIndex는 0-based (Stage 1 = 0)
+        if (StageManager.Instance != null)
+        {
+            // CurrentStage가 null이어도 currentStageIndex 자체는 유효할 수 있으니 그대로 사용
+            return StageManager.Instance.currentStageIndex + 1;
+        }
+
+        // StageManager가 없는 씬(테스트 씬 등)에서는 1로 처리
+        return 1;
+    }
+
+
+    private void ApplyIceForStage(int stageNumber)
+    {
+        if (stageNumber < 4) return;
+        if (obstacles == null || iceObjects == null) InitIceArrays();
+
+        if (!useRandomIce)
+        {
+            // 수동 리스트(디버그/테스트용) 유지하고 싶으면 사용
+            if (stage4IceCells != null)
+                foreach (var c in stage4IceCells)
+                    PlaceIceAt(c.x, c.y);
+
+            return;
+        }
+
+        int targetCount = iceCountStage4 + (stageNumber - 4) * iceCountPerStage;
+        targetCount = Mathf.Clamp(targetCount, 0, iceMaxCount);
+
+        int seed = deterministicByStage ? (stageNumber * 1000 + randomSeedOffset) : Random.Range(int.MinValue, int.MaxValue);
+        PlaceRandomIce(targetCount, seed);
+    }
+
+    private void PlaceRandomIce(int count, int seed)
+    {
+        if (count <= 0) return;
+
+        List<Vector2Int> candidates = new List<Vector2Int>(width * height);
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (IsIce(x, y)) continue;
+                if (gems != null && gems[x, y] == null) continue;
+                candidates.Add(new Vector2Int(x, y));
+            }
+        }
+
+        if (candidates.Count == 0) return;
+
+        // 결정적 셔플
+        System.Random rng = new System.Random(seed);
+        for (int i = candidates.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (candidates[i], candidates[j]) = (candidates[j], candidates[i]);
+        }
+
+        int placed = 0;
+
+        // 1차: 룰(클러스터 제한) 적용
+        for (int i = 0; i < candidates.Count && placed < count; i++)
+        {
+            var c = candidates[i];
+            if (!CanPlaceIceAtWithRules(c.x, c.y)) continue;
+
+            PlaceIceAt(c.x, c.y);
+            placed++;
+        }
+
+        // 2차(보험): 룰 때문에 덜 깔리면, 제한을 일부 완화하고 채움
+        // (캔디크러시 느낌은 유지하되 “스테이지 난이도/지시 개수”는 맞추기)
+        if (placed < count)
+        {
+            for (int i = 0; i < candidates.Count && placed < count; i++)
+            {
+                var c = candidates[i];
+                if (IsIce(c.x, c.y)) continue;
+
+                // 완화 조건: 2x2만 방지하고 나머지는 허용
+                if (avoidIce2x2 && WouldForm2x2Ice(c.x, c.y)) continue;
+
+                PlaceIceAt(c.x, c.y);
+                placed++;
+            }
+        }
+    }
+
+    private int CountAdjacentIce4(int x, int y)
+    {
+        int c = 0;
+        if (IsIce(x + 1, y)) c++;
+        if (IsIce(x - 1, y)) c++;
+        if (IsIce(x, y + 1)) c++;
+        if (IsIce(x, y - 1)) c++;
+        return c;
+    }
+
+    private bool WouldForm2x2Ice(int x, int y)
+    {
+        // (x,y)를 포함하는 2x2 사각형 4가지 검사
+        for (int dx = -1; dx <= 0; dx++)
+        {
+            for (int dy = -1; dy <= 0; dy++)
+            {
+                int ax = x + dx;
+                int ay = y + dy;
+                if (ax < 0 || ay < 0 || ax + 1 >= width || ay + 1 >= height) continue;
+
+                bool allIce = true;
+                for (int sx = 0; sx <= 1; sx++)
+                {
+                    for (int sy = 0; sy <= 1; sy++)
+                    {
+                        int nx = ax + sx;
+                        int ny = ay + sy;
+
+                        // 후보 칸은 “놓인 것으로” 가정
+                        if (nx == x && ny == y) continue;
+
+                        if (!IsIce(nx, ny))
+                        {
+                            allIce = false;
+                            break;
+                        }
+                    }
+                    if (!allIce) break;
+                }
+
+                if (allIce) return true;
+            }
+        }
+        return false;
+    }
+
+    private bool WouldExceedClusterSize(int x, int y, int maxSize)
+    {
+        // 후보 (x,y)를 Ice로 가정하고, 연결 컴포넌트 크기 계산
+        Queue<Vector2Int> q = new Queue<Vector2Int>();
+        HashSet<int> visited = new HashSet<int>();
+
+        q.Enqueue(new Vector2Int(x, y));
+        visited.Add(x + y * width);
+
+        int size = 0;
+
+        while (q.Count > 0)
+        {
+            var p = q.Dequeue();
+            size++;
+            if (size > maxSize) return true;
+
+            void TryEnqueue(int nx, int ny)
+            {
+                if (nx < 0 || nx >= width || ny < 0 || ny >= height) return;
+
+                bool isIce = (nx == x && ny == y) || IsIce(nx, ny);
+                if (!isIce) return;
+
+                int key = nx + ny * width;
+                if (visited.Add(key))
+                    q.Enqueue(new Vector2Int(nx, ny));
+            }
+
+            TryEnqueue(p.x + 1, p.y);
+            TryEnqueue(p.x - 1, p.y);
+            TryEnqueue(p.x, p.y + 1);
+            TryEnqueue(p.x, p.y - 1);
+        }
+
+        return false;
+    }
+
+    private bool CanPlaceIceAtWithRules(int x, int y)
+    {
+        if (!limitIceClustering) return true;
+
+        if (iceMaxAdjacent >= 0)
+        {
+            int adj = CountAdjacentIce4(x, y);
+            if (adj > iceMaxAdjacent) return false;
+        }
+
+        if (avoidIce2x2 && WouldForm2x2Ice(x, y)) return false;
+
+        if (iceMaxClusterSize > 0 && WouldExceedClusterSize(x, y, iceMaxClusterSize)) return false;
+
+        return true;
+    }
+
 
     private int ResolveSpecialSwapIfNeeded(Gem a, Gem b)
     {
@@ -1982,8 +2759,29 @@ public class BoardManager : MonoBehaviour
             RefillBoard();
             yield return new WaitForSeconds(fallWaitTime);
 
-            if (!HasAnyPossibleMove())
-                yield return ShuffleRoutine(force: true);
+            // 리필 이후 캐스케이드(연쇄 매치) 처리 추가
+            int combo = 0;
+            while (true)
+            {
+                int cleared = CheckMatchesAndClear_WithPromotionsSafe();
+                if (cleared <= 0) break;
+
+                combo++;
+                AddScoreForClear(cleared, comboMultiplier: combo);
+
+                // 팝/삭제 연출 대기
+                yield return new WaitForSeconds(popDuration);
+
+                // 다음 리필 + 무브 없으면 셔플
+                yield return StartCoroutine(PostClearRefillAndEnsure());
+            }
+
+            // 무브 없으면 최종 셔플 (캐스케이드 종료 후)
+            yield return StartCoroutine(ResolveCascadesAfterRefill());
+
+            // 콤보 배너(필요하면)
+            ShowComboBanner(combo);
+
         }
     }
 
@@ -2063,13 +2861,26 @@ public class BoardManager : MonoBehaviour
 
         int cleared = 0;
 
+        //  이번 ClearByMaskWithChain 패스에서 ICE는 1회만 타격되도록 기록
+        bool[,] iceHitThisPass = new bool[width, height];
+
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
                 if (!finalMask[x, y]) continue;
                 if (gems[x, y] == null) continue;
-                BreakAdjacentIceAt(x, y);
+
+                //  ICE 셀 자체가 마스크에 포함되면: 젬 삭제 대신 ICE에 "1회만" 타격
+                if (IsIce(x, y))
+                {
+                    TryBreakIceOnce(x, y, iceHitThisPass);
+                    continue;
+                }
+
+                //  일반 젬 삭제 시: 인접 ICE 타격(여기도 "1회만" 적용되도록 dedupe)
+                BreakAdjacentIceAt(x, y, iceHitThisPass);
+
                 Gem g = gems[x, y];
                 gems[x, y] = null;
                 cleared++;
@@ -2093,6 +2904,7 @@ public class BoardManager : MonoBehaviour
 
         return cleared;
     }
+
 
     #endregion
 
