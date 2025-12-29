@@ -5384,7 +5384,7 @@ MonoBehaviour:
   scoreText: {fileID: 329668528}
   baseScorePerGem: 10
   popDuration: 0.45
-  fallWaitTime: 0.25
+  fallWaitTime: 1
   matchEffectPrefab: {fileID: 3857405371207051321, guid: 9dec9f81900ff694fac3ce5784af4eac, type: 3}
   audioSource: {fileID: 2065945595}
   swapClip: {fileID: 8300000, guid: 0db2cde95aef2df4ca1210c04b7e4b2a, type: 3}
@@ -5422,7 +5422,23 @@ MonoBehaviour:
   popupBaseOffset: {x: 0, y: 20}
   popupRandomOffsetX: 10
   popupRandomOffsetY: 4
-  hintDelay: 5
+  hintDelay: 10
+  flowSpawnExtraY: 0.8
+  flowSpawnXJitter: 0.35
+  flowTimePerCell: 0.2
+  flowMinTime: 0.3
+  flowMaxTime: 0.95
+  flowXSettleRatio: 0.55
+  flowEaseY: 5
+  flowEaseX: 6
+  flowLandingSquash: 1
+  flowSquashScaleY: 0.92
+  flowSquashTime: 0.06
+  enableDiagonalFlow: 1
+  diagonalPriority: 0
+  refillTimePerCell: 0.12
+  refillMinTime: 0.18
+  refillMaxTime: 0.95
   icePrefab: {fileID: 7396713863783702617, guid: b986c736a10eb2046947fc412f2a1e14, type: 3}
   stage4IceCells:
   - {x: 3, y: 3}

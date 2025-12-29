@@ -99,6 +99,61 @@ public class Gem : MonoBehaviour
             0f
         );
     }
+    public void SetGridPositionFlow(
+    int newX, int newY,
+    float duration,
+    float xSettleRatio = 0.55f,
+    Ease easeY = Ease.InQuad,
+    Ease easeX = Ease.OutQuad,
+    bool landingSquash = true,
+    float squashScaleY = 0.92f,
+    float squashTime = 0.06f)
+    {
+        x = newX;
+        y = newY;
+
+        if (board == null)
+        {
+            transform.localPosition = new Vector3(x, y, 0f);
+            return;
+        }
+
+        float offsetX = (board.width - 1) * 0.5f;
+        float offsetY = (board.height - 1) * 0.5f;
+
+        Vector3 targetPos = new Vector3(x - offsetX, y - offsetY, 0f);
+
+        transform.DOKill();
+
+        // Y는 가속(흘러내림), X는 빨리 정착
+        float durY = Mathf.Max(0.01f, duration);
+        float durX = Mathf.Max(0.01f, duration * xSettleRatio);
+
+        Sequence seq = DOTween.Sequence();
+        seq.Join(transform.DOLocalMoveY(targetPos.y, durY).SetEase(easeY));
+        seq.Join(transform.DOLocalMoveX(targetPos.x, durX).SetEase(easeX));
+
+        if (landingSquash)
+        {
+            // 원래 스케일이 없다면 현재 스케일을 기준으로
+            Vector3 baseScale = (originalScale == Vector3.zero) ? transform.localScale : originalScale;
+
+            seq.AppendCallback(() =>
+            {
+                transform.localPosition = new Vector3(targetPos.x, transform.localPosition.y, 0f);
+            });
+
+            // 착지 스쿼시(선택)
+            seq.Append(transform.DOScale(new Vector3(baseScale.x * 1.06f, baseScale.y * squashScaleY, baseScale.z), squashTime)
+                .SetEase(Ease.OutQuad));
+            seq.Append(transform.DOScale(baseScale, squashTime).SetEase(Ease.OutQuad));
+        }
+
+        seq.OnComplete(() =>
+        {
+            transform.localPosition = targetPos;
+        });
+    }
 
     public void SetGridPosition(int newX, int newY, bool animate = true, float duration = 0.15f)
     {
