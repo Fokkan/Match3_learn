@@ -193,19 +193,18 @@ public class Gem : MonoBehaviour
         SetGridPosition(newX, newY, true, fallDuration);
     }
 
-    public void ResetVisual()
+    public void ResetVisual(bool killMoveTween = false)
     {
-        EnsureSpriteRenderer();
-        if (sr == null) return;
+        if (selectTween != null && selectTween.IsActive()) selectTween.Kill();
+        if (hintTween != null && hintTween.IsActive()) hintTween.Kill();
 
-        sr.DOKill();
-        if (selectTween != null) { selectTween.Kill(); selectTween = null; }
-        if (hintTween != null) { hintTween.Kill(); hintTween = null; }
-        transform.DOKill();
+        if (killMoveTween)
+            transform.DOKill();
 
-        baseColor.a = 1f;
-        sr.color = baseColor;
         transform.localScale = originalScale;
+
+        if (sr != null)
+            sr.color = Color.white;
     }
 
     public void SetSelected(bool selected)
@@ -234,28 +233,23 @@ public class Gem : MonoBehaviour
 
     public void PlayHintEffect()
     {
-        EnsureSpriteRenderer();
-        if (!this) return;               // Unity null 방어
-        if (transform == null) return;
+        // 낙하 이동 트윈은 끊지 않는다
+        ResetVisual(killMoveTween: false);
 
-        ResetVisual();
+        if (sr == null) return;
 
-        hintTween = sr.DOFade(0.3f, 0.4f)
-                     .SetLoops(-1, LoopType.Yoyo);
+        hintTween = sr.DOFade(0.35f, 0.35f)
+                     .SetLoops(-1, LoopType.Yoyo)
+                     .SetEase(Ease.InOutSine);
     }
 
     public void StopHintEffect()
     {
-        EnsureSpriteRenderer();
-        if (sr == null) return;
-
-        if (hintTween != null)
-        {
+        if (hintTween != null && hintTween.IsActive())
             hintTween.Kill();
-            hintTween = null;
-        }
 
-        ResetVisual();
+        // 낙하 이동 트윈은 끊지 않는다
+        ResetVisual(killMoveTween: false);
     }
 
     public void SetSpecial(SpecialGemType newType)

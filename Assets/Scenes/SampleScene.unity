@@ -2030,7 +2030,7 @@ MonoBehaviour:
   board: {fileID: 2065945593}
   bgmSource: {fileID: 1167600213}
   stageSelectBgmClip: {fileID: 8300000, guid: a25195caff7a96245b11a500129eba2e, type: 3}
-  inGameBgmClip: {fileID: 8300000, guid: a6809def9cac1d54fa7e35b91f41c11c, type: 3}
+  inGameBgmClip: {fileID: 8300000, guid: b6867a94bda56a74f9f9a91445f6eacf, type: 3}
   bgmDefaultVolume: 0.6
 --- !u!4 &876509810
 Transform:
@@ -2696,7 +2696,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: a6809def9cac1d54fa7e35b91f41c11c, type: 3}
+  m_Resource: {fileID: 8300000, guid: b6867a94bda56a74f9f9a91445f6eacf, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -5425,9 +5425,9 @@ MonoBehaviour:
   hintDelay: 10
   flowSpawnExtraY: 0.8
   flowSpawnXJitter: 0.35
-  flowTimePerCell: 0.2
-  flowMinTime: 0.3
-  flowMaxTime: 0.95
+  flowTimePerCell: 0.1
+  flowMinTime: 0.16
+  flowMaxTime: 0.7
   flowXSettleRatio: 0.55
   flowEaseY: 5
   flowEaseX: 6
@@ -5436,9 +5436,9 @@ MonoBehaviour:
   flowSquashTime: 0.06
   enableDiagonalFlow: 1
   diagonalPriority: 0
-  refillTimePerCell: 0.12
-  refillMinTime: 0.18
-  refillMaxTime: 0.95
+  refillTimePerCell: 0.08
+  refillMinTime: 0.16
+  refillMaxTime: 0.7
   icePrefab: {fileID: 7396713863783702617, guid: b986c736a10eb2046947fc412f2a1e14, type: 3}
   stage4IceCells:
   - {x: 3, y: 3}
