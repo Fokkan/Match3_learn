@@ -16,6 +16,12 @@ public class BoardManager : MonoBehaviour
     public float boardTopMargin = 2f;
     public float boardSideMargin = 0.5f;
 
+    [Header("UI-World Layout Bridge")]
+    [SerializeField] private RectTransform boardWorldAnchorUI; // Canvas/MiddleArea 아래 BoardWorldAnchorUI
+    [SerializeField] private Transform boardRoot;              // 월드의 Board 오브젝트(루트)
+    [SerializeField] private Vector3 boardWorldOffset;         // 필요 시 미세 보정 (0,0,0부터 시작)
+
+
     [Header("Board Plate")]
     public SpriteRenderer boardPlate;
     public SpriteRenderer boardGrid;
@@ -73,6 +79,26 @@ public class BoardManager : MonoBehaviour
     public TMP_Text movesText;
     public GameObject gameOverPanel;
     public TMP_Text resultText;
+
+    [Header("Goal Gauge UI")]
+    public Image goalFillImage;
+    public Image star1Image;
+    public Image star2Image;
+    public Image star3Image;
+
+    [Range(0f, 1f)] public float star1Percent = 0.33f;
+    [Range(0f, 1f)] public float star2Percent = 0.66f;
+    [Range(0f, 1f)] public float star3Percent = 1.00f;
+
+    public bool hideStarsUntilReached = true;
+    public float starPopScale = 1.15f;
+    public float starPopDuration = 0.18f;
+    public AudioClip starReachedClip;
+
+    private bool star1Shown;
+    private bool star2Shown;
+    private bool star3Shown;
+
 
     [Header("Result Buttons")]
     public Button retryButton;
@@ -255,6 +281,23 @@ public class BoardManager : MonoBehaviour
         PlaceRandomIceWithRules(s.obstacleCount, seed, rules);
     }
 
+    private void AlignBoardToMiddleArea()
+    {
+        if (boardWorldAnchorUI == null) return;
+        if (boardRoot == null) return;
+
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        Vector3 screenPos = RectTransformUtility.WorldToScreenPoint(null, boardWorldAnchorUI.position);
+
+        float z = Mathf.Abs(cam.transform.position.z - boardRoot.position.z);
+        Vector3 worldPos = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, z));
+
+        boardRoot.position = worldPos + boardWorldOffset;
+    }
+
+
     /// <summary>
     /// iceCage 배열을 보드에 매핑해서 ICE 배치.
     /// 기본은 “Top-Left 원점(인간이 읽기 쉬운 방식)”
@@ -422,6 +465,7 @@ public class BoardManager : MonoBehaviour
             InitIceArrays();
             GenerateBoard();
             ApplyIceFromStageData(StageManager.Instance != null ? StageManager.Instance.CurrentStage : null);
+
 
 
             ApplyIceForStage(GetStageNumberSafe());
@@ -825,18 +869,95 @@ public class BoardManager : MonoBehaviour
     {
         if (scoreText != null)
             scoreText.text = $"Score: {score}";
+
+        UpdateGoalGaugeUI();
     }
 
     private void UpdateGoalUI()
     {
         if (goalText != null)
             goalText.text = $"Goal: {targetScore}";
+
+        ResetGoalGaugeUI();
+        UpdateGoalGaugeUI();
     }
+
 
     private void UpdateMovesUI()
     {
         if (movesText != null)
             movesText.text = $"Moves: {movesLeft}";
+    }
+
+    private void ResetGoalGaugeUI()
+    {
+        star1Shown = false;
+        star2Shown = false;
+        star3Shown = false;
+
+        if (goalFillImage != null)
+            goalFillImage.fillAmount = 0f;
+
+        if (!hideStarsUntilReached) return;
+
+        if (star1Image != null) star1Image.gameObject.SetActive(false);
+        if (star2Image != null) star2Image.gameObject.SetActive(false);
+        if (star3Image != null) star3Image.gameObject.SetActive(false);
+    }
+
+    private void UpdateGoalGaugeUI()
+    {
+        if (targetScore <= 0)
+        {
+            if (goalFillImage != null) goalFillImage.fillAmount = 0f;
+            return;
+        }
+
+        float p = Mathf.Clamp01((float)score / targetScore);
+
+        if (goalFillImage != null)
+            goalFillImage.fillAmount = p;
+
+        HandleStarReached(star1Image, star1Percent, ref star1Shown, p);
+        HandleStarReached(star2Image, star2Percent, ref star2Shown, p);
+        HandleStarReached(star3Image, star3Percent, ref star3Shown, p);
+    }
+
+    private void HandleStarReached(Image star, float threshold, ref bool shown, float progress)
+    {
+        if (star == null) return;
+
+        if (shown) return;
+
+        if (progress + 0.0001f < threshold) return;
+
+        shown = true;
+
+        if (hideStarsUntilReached)
+            star.gameObject.SetActive(true);
+
+        PopStar(star);
+
+        if (starReachedClip != null)
+            PlaySfx(starReachedClip);
+    }
+
+    private void PopStar(Image star)
+    {
+        RectTransform rt = star.rectTransform;
+        if (rt == null) return;
+
+        rt.DOKill();
+
+        Vector3 baseScale = rt.localScale;
+        rt.localScale = baseScale * 0.6f;
+
+        rt.DOScale(baseScale * starPopScale, starPopDuration * 0.55f)
+          .SetEase(Ease.OutBack)
+          .OnComplete(() =>
+          {
+              rt.DOScale(baseScale, starPopDuration * 0.45f).SetEase(Ease.OutQuad);
+          });
     }
 
     #endregion
@@ -2590,6 +2711,13 @@ public class BoardManager : MonoBehaviour
         if (retryButton != null) retryButton.gameObject.SetActive(false);
         if (nextStageButton != null) nextStageButton.gameObject.SetActive(false);
     }
+    private IEnumerator AlignBoardNextFrame()
+    {
+        yield return null;
+        yield return null;
+        AlignBoardToMiddleArea();
+    }
+
 
     public void RestartGame()
     {
@@ -2613,6 +2741,8 @@ public class BoardManager : MonoBehaviour
         // 2) 보드 생성
         gems = new Gem[width, height];
         GenerateBoard();
+        StartCoroutine(AlignBoardNextFrame());
+
 
         // 3) ICE 배열 먼저 초기화 (중요: ApplyIce 전에!)
         InitIceArrays();
