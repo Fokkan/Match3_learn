@@ -1789,7 +1789,7 @@ public class BoardManager : MonoBehaviour
             g.transform.localScale = gemBaseScale;
             g.transform.DOKill();
 
-            float delay = 0.02f * op.toY;
+            float delay = 0.01f * op.toY;
 
             AnimateFlowMove(g.transform, target, durClamped).SetDelay(delay);
 
@@ -1916,7 +1916,7 @@ public class BoardManager : MonoBehaviour
         g.ResetVisual();
         g.transform.localScale = gemBaseScale;
 
-        float delay = 0.02f * toY;
+        float delay = 0.01f * toY;
 
         AnimateFlowMove(g.transform, target, durClamped).SetDelay(delay);
 
