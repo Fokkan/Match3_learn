@@ -16,6 +16,12 @@ public class BoardManager : MonoBehaviour
     public float boardTopMargin = 2f;
     public float boardSideMargin = 0.5f;
 
+    [Header("UI-World Layout Bridge")]
+    [SerializeField] private RectTransform boardWorldAnchorUI; // Canvas/MiddleArea 아래 BoardWorldAnchorUI
+    [SerializeField] private Transform boardRoot;              // 월드의 Board 오브젝트(루트)
+    [SerializeField] private Vector3 boardWorldOffset;         // 필요 시 미세 보정 (0,0,0부터 시작)
+
+
     [Header("Board Plate")]
     public SpriteRenderer boardPlate;
     public SpriteRenderer boardGrid;
@@ -74,6 +80,26 @@ public class BoardManager : MonoBehaviour
     public GameObject gameOverPanel;
     public TMP_Text resultText;
 
+    [Header("Goal Gauge UI")]
+    public Image goalFillImage;
+    public Image star1Image;
+    public Image star2Image;
+    public Image star3Image;
+
+    [Range(0f, 1f)] public float star1Percent = 0.33f;
+    [Range(0f, 1f)] public float star2Percent = 0.66f;
+    [Range(0f, 1f)] public float star3Percent = 1.00f;
+
+    public bool hideStarsUntilReached = true;
+    public float starPopScale = 1.15f;
+    public float starPopDuration = 0.18f;
+    public AudioClip starReachedClip;
+
+    private bool star1Shown;
+    private bool star2Shown;
+    private bool star3Shown;
+
+
     [Header("Result Buttons")]
     public Button retryButton;
     public Button nextStageButton;
@@ -97,7 +123,33 @@ public class BoardManager : MonoBehaviour
     public float popupRandomOffsetY = 6f;
 
     [Header("Hint Settings")]
-    public float hintDelay = 3f; // 최소 3초 이상 권장
+    public float hintDelay = 3f; // seconds before hint appears
+                                 // ===== Fall / Refill Flow (CandyCrush-like) =====
+    [Header("Fall/ReFill Flow (CandyCrush-like)")]
+    [SerializeField] private float flowSpawnExtraY = 0.8f;
+    [SerializeField] private float flowSpawnXJitter = 0.35f;
+
+    [SerializeField] private float flowTimePerCell = 0.06f;
+    [SerializeField] private float flowMinTime = 0.12f;
+    [SerializeField] private float flowMaxTime = 0.55f;
+
+    [SerializeField] private float flowXSettleRatio = 0.55f;
+    [SerializeField] private Ease flowEaseY = Ease.InQuad;
+    [SerializeField] private Ease flowEaseX = Ease.OutQuad;
+
+    [SerializeField] private bool flowLandingSquash = true;
+    [SerializeField] private float flowSquashScaleY = 0.92f;
+    [SerializeField] private float flowSquashTime = 0.06f;
+    [SerializeField] private bool enableDiagonalFlow = true;
+
+    // 대각선 후보가 좌/우 둘 다 가능할 때 우선순위
+    // -1: 왼쪽 우선, +1: 오른쪽 우선, 0: 랜덤
+    [SerializeField] private int diagonalPriority = 0;
+    // 낙하/리필 애니메이션 시간(칸 수 기반)
+    [SerializeField] private float refillTimePerCell = 0.06f;
+    [SerializeField] private float refillMinTime = 0.12f;
+    [SerializeField] private float refillMaxTime = 0.55f;
+
 
 
     #endregion
@@ -113,6 +165,13 @@ public class BoardManager : MonoBehaviour
     private ObstacleType[,] obstacles;
     private GameObject[,] iceObjects;
     private int[,] iceHp; // 크랙 단계용 (예: 1~(iceCrackSprites.Length-1))
+    private Vector3 gemBaseScale = Vector3.one;
+
+    private void CacheGemBaseScale()
+    {
+        if (gemPrefab != null) gemBaseScale = gemPrefab.transform.localScale;
+        else gemBaseScale = Vector3.one;
+    }
 
     private Gem[,] gems;
     private Gem selectedGem = null;
@@ -128,6 +187,7 @@ public class BoardManager : MonoBehaviour
     private float idleTimer = 0f;
     private Gem hintGemA = null;
     private Gem hintGemB = null;
+    private float lastRefillAnimTime = 0f;
 
     [Header("Ice Break VFX")]
     public float iceBreakDuration = 0.18f;
@@ -202,24 +262,41 @@ public class BoardManager : MonoBehaviour
         if (obstacles == null || iceObjects == null || iceHp == null) InitIceArrays();
 
         // StageData에서 방해요소 사용 안 하면 스킵
-        if (!s.useObstacles) return;  // :contentReference[oaicite:2]{index=2}
+        if (!s.useObstacles) return;  //
 
         // (1) 고정 배치 마스크 우선
-        if (s.iceCage != null && s.iceCage.Length == width * height) // :contentReference[oaicite:3]{index=3}
+        if (s.iceCage != null && s.iceCage.Length == width * height) //
         {
             ApplyIceCageMask_TopLeftOrigin(s.iceCage);
             return;
         }
 
         // (2) 랜덤 배치(개수 기반)
-        if (s.obstacleCount <= 0) return; // :contentReference[oaicite:4]{index=4}
+        if (s.obstacleCount <= 0) return; //
 
-        IceClusterRules rules = GetIceRulesFromLevel(s.obstacleLevel); // :contentReference[oaicite:5]{index=5}
+        IceClusterRules rules = GetIceRulesFromLevel(s.obstacleLevel); //
 
         // 결정적 랜덤(같은 스테이지면 같은 배치) 권장: seed에 stageID 활용
-        int seed = s.stageID * 1000 + 12345; // :contentReference[oaicite:6]{index=6}
+        int seed = s.stageID * 1000 + 12345; //
         PlaceRandomIceWithRules(s.obstacleCount, seed, rules);
     }
+
+    private void AlignBoardToMiddleArea()
+    {
+        if (boardWorldAnchorUI == null) return;
+        if (boardRoot == null) return;
+
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        Vector3 screenPos = RectTransformUtility.WorldToScreenPoint(null, boardWorldAnchorUI.position);
+
+        float z = Mathf.Abs(cam.transform.position.z - boardRoot.position.z);
+        Vector3 worldPos = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, z));
+
+        boardRoot.position = worldPos + boardWorldOffset;
+    }
+
 
     /// <summary>
     /// iceCage 배열을 보드에 매핑해서 ICE 배치.
@@ -378,6 +455,7 @@ public class BoardManager : MonoBehaviour
 
     private void Start()
     {
+        CacheGemBaseScale();
         if (StageManager.Instance == null || StageManager.Instance.CurrentStage == null)
         {
             maxMoves = defaultMaxMoves;
@@ -387,6 +465,7 @@ public class BoardManager : MonoBehaviour
             InitIceArrays();
             GenerateBoard();
             ApplyIceFromStageData(StageManager.Instance != null ? StageManager.Instance.CurrentStage : null);
+
 
 
             ApplyIceForStage(GetStageNumberSafe());
@@ -454,7 +533,7 @@ public class BoardManager : MonoBehaviour
                 int type = GetRandomTypeForInitial(x, y);
 
                 GameObject obj = Instantiate(gemPrefab, Vector3.zero, Quaternion.identity, transform);
-
+                obj.transform.localScale = gemBaseScale;
                 var sr = obj.GetComponent<SpriteRenderer>();
                 if (sr != null)
                 {
@@ -533,6 +612,27 @@ public class BoardManager : MonoBehaviour
             if (child.GetComponent<Gem>() != null)
                 Destroy(child.gameObject);
         }
+        // === ICE 오브젝트도 정리 ===
+        if (iceObjects != null)
+        {
+            int w = iceObjects.GetLength(0);
+            int h = iceObjects.GetLength(1);
+            for (int x = 0; x < w; x++)
+            {
+                for (int y = 0; y < h; y++)
+                {
+                    if (iceObjects[x, y] != null)
+                    {
+                        Destroy(iceObjects[x, y]);
+                        iceObjects[x, y] = null;
+                    }
+                }
+            }
+        }
+
+        obstacles = null;
+        iceObjects = null;
+        iceHp = null;
 
         gems = null;
     }
@@ -574,9 +674,30 @@ public class BoardManager : MonoBehaviour
         return false;
     }
 
-    private void CreateGemAt(int x, int y)
+    void CreateGemAt(int x, int y)
+    {
+        // 기본은 보드 최상단에서 흘러나오게
+        CreateGemAt(x, y, height - 1);
+    }
+    private Vector3 GridToLocalPosition(int x, int y)
+    {
+        float offsetX = (width - 1) * 0.5f;
+        float offsetY = (height - 1) * 0.5f;
+        return new Vector3(x - offsetX, y - offsetY, 0f);
+    }
+
+    private float CalcFlowDurationByCells(int cells)
+    {
+        float t = cells * flowTimePerCell;
+        return Mathf.Clamp(t, flowMinTime, flowMaxTime);
+    }
+
+    // spawnFromY: 이 세그먼트의 최상단 y (ICE 세그먼트 리필을 자연스럽게)
+    void CreateGemAt(int x, int y, int spawnFromY)
     {
         GameObject obj = Instantiate(gemPrefab, Vector3.zero, Quaternion.identity, transform);
+        obj.transform.localScale = gemBaseScale;
+
 
         int type = 0;
         if (gemSprites != null && gemSprites.Length > 0)
@@ -593,18 +714,104 @@ public class BoardManager : MonoBehaviour
         Gem gem = obj.GetComponent<Gem>();
         gem.Init(this, x, y, type);
 
-        float offsetX = (width - 1) * 0.5f;
-        float offsetY = (height - 1) * 0.5f;
-
-        Vector3 targetPos = new Vector3(x - offsetX, y - offsetY, 0f);
-        Vector3 startPos = new Vector3(targetPos.x, targetPos.y + height, 0f);
+        Vector3 targetPos = GridToLocal(x, y);
+        Vector3 startPos = GetFlowSpawnLocalPos(x, spawnFromY, targetPos);
 
         gem.transform.localPosition = startPos;
-        gem.SetGridPosition(x, y, true, 0.25f);
+
+        // 칸 수 기반 낙하 시간(스폰 라인에서 목표 칸까지)
+        int cellDelta = Mathf.Abs(spawnFromY - y) + 1;
+        float dur = GetFlowDurationByCells(cellDelta);
+
+
+        //  낙하 Flow 적용(보드 기준 트윈으로 통일) + lastRefillAnimTime 갱신
+        gem.ResetVisual();
+        gem.transform.localScale = gemBaseScale;
+
+        // 필요하면 스폰에도 약간의 계단식 딜레이를 줄 수 있음(지금은 0으로 권장)
+        float delay = 0f;
+
+        Tween tw = AnimateFlowMove(gem.transform, targetPos, dur);
+        tw.SetDelay(delay);
+
+        float landingExtra = GetLandingExtraTime();
+        lastRefillAnimTime = Mathf.Max(lastRefillAnimTime, delay + dur + landingExtra);
+
+
 
         gems[x, y] = gem;
         obj.name = $"Gem ({x},{y})";
     }
+    private float GetLandingExtraTime()
+    {
+        if (!flowLandingSquash) return 0f;
+        return flowSquashTime * 3f;
+    }
+
+    private Tween AnimateFlowMove(Transform t, Vector3 targetLocal, float dur)
+    {
+        dur = Mathf.Max(dur, flowMinTime);
+
+        Vector3 baseScale = gemBaseScale;
+
+        t.DOKill();
+
+        Tween ty = t.DOLocalMoveY(targetLocal.y, dur).SetEase(flowEaseY);
+        Tween tx = t.DOLocalMoveX(targetLocal.x, dur * flowXSettleRatio).SetEase(flowEaseX);
+
+        Sequence s = DOTween.Sequence();
+        s.Join(ty);
+        s.Join(tx);
+
+        if (flowLandingSquash)
+        {
+            float st = Mathf.Max(0.01f, flowSquashTime);
+
+            s.Append(t.DOScale(new Vector3(baseScale.x * 1.06f, baseScale.y * flowSquashScaleY, baseScale.z), st).SetEase(Ease.OutQuad));
+            s.Append(t.DOScale(new Vector3(baseScale.x * 0.98f, baseScale.y * 1.02f, baseScale.z), st).SetEase(Ease.OutQuad));
+            s.Append(t.DOScale(baseScale, st).SetEase(Ease.OutQuad));
+        }
+
+        s.OnComplete(() =>
+        {
+            t.localPosition = targetLocal;
+            t.localScale = baseScale;
+        });
+
+        return s;
+    }
+
+
+
+
+    private Vector3 GridToLocal(int x, int y)
+    {
+        float offsetX = (width - 1) * 0.5f;
+        float offsetY = (height - 1) * 0.5f;
+        return new Vector3(x - offsetX, y - offsetY, 0f);
+    }
+
+    private float GetFlowDurationByCells(int cellDelta)
+    {
+        float dur = Mathf.Abs(cellDelta) * flowTimePerCell;
+        return Mathf.Clamp(dur, flowMinTime, flowMaxTime);
+    }
+
+    // 세그먼트 상단(spawnFromY)에서 흘러나오게 시작 위치 생성
+    private Vector3 GetFlowSpawnLocalPos(int x, int spawnFromY, Vector3 targetPos)
+    {
+        //  판 밖 금지: 스폰 라인을 "세그먼트 최상단 칸"으로 둔다.
+        Vector3 spawnLine = GridToLocal(x, spawnFromY);
+
+        //  extraY도 너무 크면 밖처럼 보이니 줄인다(테스트용)
+        Vector3 start = spawnLine + Vector3.up * Mathf.Min(flowSpawnExtraY, 0.15f);
+
+
+        // 살짝 좌우 흔들림
+        start.x = targetPos.x + Random.Range(-Mathf.Min(flowSpawnXJitter, 0.10f), Mathf.Min(flowSpawnXJitter, 0.10f));
+        return start;
+    }
+
 
     private void AdjustCameraAndBoard()
     {
@@ -662,18 +869,95 @@ public class BoardManager : MonoBehaviour
     {
         if (scoreText != null)
             scoreText.text = $"Score: {score}";
+
+        UpdateGoalGaugeUI();
     }
 
     private void UpdateGoalUI()
     {
         if (goalText != null)
             goalText.text = $"Goal: {targetScore}";
+
+        ResetGoalGaugeUI();
+        UpdateGoalGaugeUI();
     }
+
 
     private void UpdateMovesUI()
     {
         if (movesText != null)
             movesText.text = $"Moves: {movesLeft}";
+    }
+
+    private void ResetGoalGaugeUI()
+    {
+        star1Shown = false;
+        star2Shown = false;
+        star3Shown = false;
+
+        if (goalFillImage != null)
+            goalFillImage.fillAmount = 0f;
+
+        if (!hideStarsUntilReached) return;
+
+        if (star1Image != null) star1Image.gameObject.SetActive(false);
+        if (star2Image != null) star2Image.gameObject.SetActive(false);
+        if (star3Image != null) star3Image.gameObject.SetActive(false);
+    }
+
+    private void UpdateGoalGaugeUI()
+    {
+        if (targetScore <= 0)
+        {
+            if (goalFillImage != null) goalFillImage.fillAmount = 0f;
+            return;
+        }
+
+        float p = Mathf.Clamp01((float)score / targetScore);
+
+        if (goalFillImage != null)
+            goalFillImage.fillAmount = p;
+
+        HandleStarReached(star1Image, star1Percent, ref star1Shown, p);
+        HandleStarReached(star2Image, star2Percent, ref star2Shown, p);
+        HandleStarReached(star3Image, star3Percent, ref star3Shown, p);
+    }
+
+    private void HandleStarReached(Image star, float threshold, ref bool shown, float progress)
+    {
+        if (star == null) return;
+
+        if (shown) return;
+
+        if (progress + 0.0001f < threshold) return;
+
+        shown = true;
+
+        if (hideStarsUntilReached)
+            star.gameObject.SetActive(true);
+
+        PopStar(star);
+
+        if (starReachedClip != null)
+            PlaySfx(starReachedClip);
+    }
+
+    private void PopStar(Image star)
+    {
+        RectTransform rt = star.rectTransform;
+        if (rt == null) return;
+
+        rt.DOKill();
+
+        Vector3 baseScale = rt.localScale;
+        rt.localScale = baseScale * 0.6f;
+
+        rt.DOScale(baseScale * starPopScale, starPopDuration * 0.55f)
+          .SetEase(Ease.OutBack)
+          .OnComplete(() =>
+          {
+              rt.DOScale(baseScale, starPopDuration * 0.45f).SetEase(Ease.OutQuad);
+          });
     }
 
     #endregion
@@ -740,9 +1024,36 @@ public class BoardManager : MonoBehaviour
     #region Score Popup
     private bool IsIce(int x, int y)
     {
-        if (obstacles == null) return false;
         if (x < 0 || x >= width || y < 0 || y >= height) return false;
-        return obstacles[x, y] == ObstacleType.Ice;
+
+        // 1) 데이터 기준
+        if (obstacles != null && obstacles[x, y] == ObstacleType.Ice) return true;
+
+        // 2) 안전장치: 오브젝트가 남아있으면 Ice로 취급 (데이터 누락/초기화 꼬임 방어)
+        if (iceObjects != null && iceObjects[x, y] != null) return true;
+
+        return false;
+    }
+    private void CleanupOrphanIceObjects()
+    {
+        if (iceObjects == null) return;
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (iceObjects[x, y] == null) continue;
+
+                // obstacles가 없거나 Ice로 표시되지 않았는데 오브젝트만 있으면 = 고아
+                bool shouldBeIce = (obstacles != null && obstacles[x, y] == ObstacleType.Ice);
+                if (!shouldBeIce)
+                {
+                    Destroy(iceObjects[x, y]);
+                    iceObjects[x, y] = null;
+                    if (iceHp != null) iceHp[x, y] = 0;
+                }
+            }
+        }
     }
     private void SpawnScorePopupAtWorld(int amount, Vector3 worldPos)
     {
@@ -879,14 +1190,16 @@ public class BoardManager : MonoBehaviour
             {
                 AddScoreForClear(cleared, comboMultiplier: 1);
                 turn.didAction = true;
+
+                yield return new WaitForSeconds(popDuration);
                 yield return StartCoroutine(PostClearRefillAndEnsure());
             }
 
-            // Stripe 스왑은 "매치가 없어도 액션"이므로 되돌리지 않음
             yield return StartCoroutine(EndTurnIfAction(turn));
             isAnimating = false;
             yield break;
         }
+
 
         // (B) Wrapped + Normal 즉발(현재 프로젝트 룰 유지)
         if (!anyColor && IsWrappedNormalSwap(first, second))
@@ -898,6 +1211,8 @@ public class BoardManager : MonoBehaviour
             {
                 AddScoreForClear(cleared, comboMultiplier: 1);
                 turn.didAction = true;
+
+                yield return new WaitForSeconds(popDuration);
                 yield return StartCoroutine(PostClearRefillAndEnsure());
             }
 
@@ -905,6 +1220,7 @@ public class BoardManager : MonoBehaviour
             isAnimating = false;
             yield break;
         }
+
 
         // (C) 그 외 스페셜 조합(Stripe+Wrapped / Wrapped+Wrapped / ColorBomb+X 등)
         int specialCleared = ResolveSpecialSwapIfNeeded(first, second);
@@ -995,17 +1311,15 @@ public class BoardManager : MonoBehaviour
         score += amount;
         UpdateScoreUI();
     }
-        private IEnumerator PostClearRefillAndEnsure()
+    private IEnumerator PostClearRefillAndEnsure()
     {
-        RefillBoard();
-        yield return new WaitForSeconds(fallWaitTime);
+        // 낙하/리필 애니메이션까지 포함해서 처리
+        yield return StartCoroutine(RefillBoardRoutine());
 
         // 리필로 생긴 자연 매치를 끝까지 정리
         yield return StartCoroutine(ResolveCascadesAfterRefill());
-
-        isAnimating = false;
-        yield break;
     }
+
 
 
 
@@ -1332,30 +1646,467 @@ public class BoardManager : MonoBehaviour
 
     private void RefillBoard()
     {
+        CleanupOrphanIceObjects();
+        // 1) 먼저 보드 전체에서 "수직 + 대각" 흐름 중력 적용
+        ApplyGravityWithDiagonalFlow();
+
+        // 2) 남은 빈칸은 기존과 동일하게 "세그먼트 상단"에서 리필(ICE 아래 구간도 채움)
+        FillEmptyCellsBySegments();
+    }
+    private IEnumerator RefillBoardRoutine()
+    {
+        CleanupOrphanIceObjects();
+
+        // Phase A: 낙하/밀림 (논리 계산 -> 1회 애니메이션)
+        lastRefillAnimTime = 0f;
+
+        var moveMap = ApplyGravityWithDiagonalFlow_CollectMoves();
+        AnimateCollectedMoves(moveMap);
+
+        float fallTime = Mathf.Max(lastRefillAnimTime, fallWaitTime);
+        yield return new WaitForSeconds(fallTime);
+
+        // Phase B: 스폰(세그먼트 리필)
+        lastRefillAnimTime = 0f;
+        FillEmptyCellsBySegments();
+
+        float spawnTime = Mathf.Max(lastRefillAnimTime, fallWaitTime * 0.5f);
+        yield return new WaitForSeconds(spawnTime);
+
+        // 안전 동기화(애니 끝난 뒤)
+        ForceSyncGridTransforms();
+    }
+
+    private void ApplyGravityWithDiagonalFlow()
+    {
+        bool movedAny = true;
+        int safety = 0;
+
+        while (movedAny && safety++ < 100)
+        {
+            movedAny = false;
+
+            // Pass 1) 수직 낙하만 먼저 전부 처리
+            bool movedVertical = false;
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    if (IsIce(x, y)) continue;
+                    if (gems[x, y] != null) continue;
+
+                    if (TryPullDownFromAbove(x, y))
+                    {
+                        movedVertical = true;
+                    }
+                }
+            }
+
+            if (movedVertical)
+            {
+                movedAny = true;
+                continue; // 수직으로 한 번이라도 움직였으면, 다시 수직부터 반복
+            }
+
+            // Pass 2) 수직이 더 이상 불가능할 때만 대각선 허용
+            if (enableDiagonalFlow)
+            {
+                bool movedDiagonal = false;
+
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        if (IsIce(x, y)) continue;
+                        if (gems[x, y] != null) continue;
+
+                        if (TrySlideDownFromDiagonal(x, y))
+                        {
+                            movedDiagonal = true;
+                        }
+                    }
+                }
+
+                if (movedDiagonal)
+                {
+                    movedAny = true;
+                }
+            }
+        }
+    }
+
+    private struct FlowMoveOp
+    {
+        public Gem gem;
+        public int fromX, fromY;
+        public int toX, toY;
+    }
+
+    private Dictionary<Gem, FlowMoveOp> ApplyGravityWithDiagonalFlow_CollectMoves()
+    {
+        var moveMap = new Dictionary<Gem, FlowMoveOp>(width * height);
+
+        bool movedAny = true;
+        int safety = 0;
+
+        while (movedAny && safety++ < 100)
+        {
+            movedAny = false;
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    if (IsIce(x, y)) continue;
+                    if (gems[x, y] != null) continue;
+
+                    if (TryPullDownFromAbove_Collect(x, y, moveMap))
+                    {
+                        movedAny = true;
+                        continue;
+                    }
+
+                    if (enableDiagonalFlow && TrySlideDownFromDiagonal_Collect(x, y, moveMap))
+                    {
+                        movedAny = true;
+                        continue;
+                    }
+                }
+            }
+        }
+
+        return moveMap;
+    }
+
+    private bool TryPullDownFromAbove_Collect(int x, int emptyY, Dictionary<Gem, FlowMoveOp> moveMap)
+    {
+        for (int yy = emptyY + 1; yy < height; yy++)
+        {
+            if (IsIce(x, yy)) return false;
+
+            Gem g = gems[x, yy];
+            if (g == null) continue;
+
+            MoveGemLogical(x, yy, x, emptyY, moveMap);
+            return true;
+        }
+        return false;
+    }
+
+    private bool TrySlideDownFromDiagonal_Collect(int x, int emptyY, Dictionary<Gem, FlowMoveOp> moveMap)
+    {
+        int srcX = -1;
+        int srcY = -1;
+
+        bool leftOk = (x > 0 && emptyY + 1 < height &&
+                       !IsIce(x - 1, emptyY + 1) &&
+                       gems[x - 1, emptyY + 1] != null);
+
+        bool rightOk = (x < width - 1 && emptyY + 1 < height &&
+                        !IsIce(x + 1, emptyY + 1) &&
+                        gems[x + 1, emptyY + 1] != null);
+
+        if (leftOk)
+        {
+            if (IsBlockedBelow(x - 1, emptyY + 1))
+            {
+                srcX = x - 1;
+                srcY = emptyY + 1;
+            }
+            else leftOk = false;
+        }
+
+        if (rightOk)
+        {
+            if (IsBlockedBelow(x + 1, emptyY + 1))
+            {
+                if (srcX == -1)
+                {
+                    srcX = x + 1;
+                    srcY = emptyY + 1;
+                }
+            }
+            else rightOk = false;
+        }
+
+        if (!leftOk && !rightOk) return false;
+
+        if (leftOk && rightOk)
+        {
+            if (diagonalPriority == 0)
+            {
+                if (Random.value < 0.5f) { srcX = x - 1; srcY = emptyY + 1; }
+                else { srcX = x + 1; srcY = emptyY + 1; }
+            }
+            else if (diagonalPriority < 0)
+            {
+                srcX = x - 1; srcY = emptyY + 1;
+            }
+            else
+            {
+                srcX = x + 1; srcY = emptyY + 1;
+            }
+        }
+
+        if (srcX < 0) return false;
+
+        MoveGemLogical(srcX, srcY, x, emptyY, moveMap);
+        return true;
+    }
+
+    private void MoveGemLogical(int fromX, int fromY, int toX, int toY, Dictionary<Gem, FlowMoveOp> moveMap)
+    {
+        if (fromX < 0 || fromX >= width || fromY < 0 || fromY >= height) return;
+        if (toX < 0 || toX >= width || toY < 0 || toY >= height) return;
+
+        if (IsIce(toX, toY)) return;
+
+        Gem g = gems[fromX, fromY];
+        if (g == null) return;
+
+        if (gems[toX, toY] != null) return;
+
+        gems[fromX, fromY] = null;
+        gems[toX, toY] = g;
+
+        if (moveMap.TryGetValue(g, out var op))
+        {
+            op.toX = toX;
+            op.toY = toY;
+            moveMap[g] = op;
+        }
+        else
+        {
+            moveMap[g] = new FlowMoveOp
+            {
+                gem = g,
+                fromX = fromX,
+                fromY = fromY,
+                toX = toX,
+                toY = toY
+            };
+        }
+
+        g.x = toX;
+        g.y = toY;
+    }
+    private void AnimateCollectedMoves(Dictionary<Gem, FlowMoveOp> moveMap)
+    {
+        if (moveMap == null || moveMap.Count == 0) return;
+
+        foreach (var kv in moveMap)
+        {
+            FlowMoveOp op = kv.Value;
+            Gem g = op.gem;
+            if (g == null) continue;
+
+            int cells = Mathf.Abs(op.fromY - op.toY) + Mathf.Abs(op.fromX - op.toX);
+            float dur = Mathf.Clamp(cells * refillTimePerCell, refillMinTime, refillMaxTime);
+            float durClamped = Mathf.Max(dur, flowMinTime);
+
+            Vector3 target = GridToLocal(op.toX, op.toY);
+
+            g.ResetVisual();
+            g.transform.localScale = gemBaseScale;
+            g.transform.DOKill();
+
+            float delay = 0.01f * op.toY;
+
+            AnimateFlowMove(g.transform, target, durClamped).SetDelay(delay);
+
+            float extra = GetLandingExtraTime();
+            lastRefillAnimTime = Mathf.Max(lastRefillAnimTime, delay + durClamped + extra);
+        }
+    }
+
+    private bool TryPullDownFromAbove(int x, int emptyY)
+    {
+        // emptyY 위쪽에서 가장 가까운 젬을 찾되, ICE를 만나면 중단(막힘)
+        for (int yy = emptyY + 1; yy < height; yy++)
+        {
+            if (IsIce(x, yy))
+                return false; // ICE가 벽 역할 → 그 위는 못 내려옴
+
+            Gem g = gems[x, yy];
+            if (g == null) continue;
+
+            MoveGemFlow(x, yy, x, emptyY);
+            return true;
+        }
+        return false;
+    }
+    private bool TrySlideDownFromDiagonal(int x, int emptyY)
+    {
+        int leftX = x - 1;
+        int rightX = x + 1;
+        int srcY = emptyY + 1;
+
+        if (srcY >= height) return false;
+
+        bool leftOk = (leftX >= 0 &&
+                       !IsIce(leftX, srcY) &&
+                       gems[leftX, srcY] != null &&
+                       IsBlockedBelow(leftX, srcY));
+
+        bool rightOk = (rightX < width &&
+                        !IsIce(rightX, srcY) &&
+                        gems[rightX, srcY] != null &&
+                        IsBlockedBelow(rightX, srcY));
+
+        if (!leftOk && !rightOk) return false;
+
+        int chosenX;
+
+        if (leftOk && rightOk)
+        {
+            // 1) 같은 높이의 대각 후보가 둘 다 있으면 "공급이 유리한 쪽(세그먼트 상단이 높은 쪽)" 우선
+            int leftTop = GetSegmentTopY(leftX, srcY);
+            int rightTop = GetSegmentTopY(rightX, srcY);
+
+            if (leftTop > rightTop) chosenX = leftX;
+            else if (rightTop > leftTop) chosenX = rightX;
+            else
+            {
+                // 2) 그래도 같으면 기존 diagonalPriority로 타이브레이크(랜덤은 권장하지 않음)
+                if (diagonalPriority == 0)
+                {
+                    // parity 기반(일관성)으로 선택: 랜덤보다 자연스러움
+                    chosenX = ((x + emptyY) % 2 == 0) ? leftX : rightX;
+                }
+                else if (diagonalPriority < 0) chosenX = leftX;
+                else chosenX = rightX;
+            }
+        }
+        else
+        {
+            chosenX = leftOk ? leftX : rightX;
+        }
+
+        MoveGemFlow(chosenX, srcY, x, emptyY);
+        return true;
+    }
+
+    private void ForceSyncGridTransforms()
+    {
+        if (gems == null) return;
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Gem g = gems[x, y];
+                if (g == null) continue;
+
+                if (g.x != x || g.y != y)
+                {
+                    g.x = x;
+                    g.y = y;
+                }
+
+                Transform t = g.transform;
+                t.DOKill();
+                t.localPosition = GridToLocal(x, y);
+                t.localScale = gemBaseScale;
+            }
+        }
+    }
+
+    private void MoveGemFlow(int fromX, int fromY, int toX, int toY)
+    {
+        if (fromX < 0 || fromX >= width || fromY < 0 || fromY >= height) return;
+        if (toX < 0 || toX >= width || toY < 0 || toY >= height) return;
+
+        if (IsIce(toX, toY)) return;
+
+        Gem g = gems[fromX, fromY];
+        if (g == null) return;
+
+        if (gems[toX, toY] != null) return;
+
+        gems[fromX, fromY] = null;
+        gems[toX, toY] = g;
+
+        int cells = Mathf.Abs(fromY - toY) + Mathf.Abs(fromX - toX);
+        float dur = Mathf.Clamp(cells * refillTimePerCell, refillMinTime, refillMaxTime);
+
+        // AnimateFlowMove가 flowMinTime으로 올릴 수 있으니, 대기 시간도 동일 기준으로 보정
+        float durClamped = Mathf.Max(dur, flowMinTime);
+
+        Vector3 target = GridToLocal(toX, toY);
+
+        g.ResetVisual();
+        g.transform.localScale = gemBaseScale;
+
+        float delay = 0.01f * toY;
+
+        AnimateFlowMove(g.transform, target, durClamped).SetDelay(delay);
+
+        float extra = GetLandingExtraTime();
+        lastRefillAnimTime = Mathf.Max(lastRefillAnimTime, delay + durClamped + extra);
+
+
+
+        g.x = toX;
+        g.y = toY;
+    }
+
+    private void FillEmptyCellsBySegments()
+    {
         for (int x = 0; x < width; x++)
         {
             int segmentStart = 0;
 
-            // y를 훑다가 ICE를 만나면, 그 아래 구간만 압축하고 ICE는 건드리지 않는다.
             for (int y = 0; y < height; y++)
             {
                 if (!IsIce(x, y)) continue;
 
-                // ICE 셀은 고정: 만약 gem이 비어있다면 안전하게 하나 생성(원칙상 거의 안 생김)
+                // ICE 셀은 고정. 비어있으면 안전 생성
                 if (gems[x, y] == null)
                     CreateGemAt(x, y);
 
-                // segmentStart ~ (y-1) 구간만 압축/리필
-                CollapseAndRefillSegment(x, segmentStart, y - 1);
+                // segmentStart ~ y-1 구간에서 "남은 빈칸"만 채우기
+                FillEmptyInSegment(x, segmentStart, y - 1, y - 1);
 
-                // 다음 구간은 ICE 위부터 시작
                 segmentStart = y + 1;
             }
 
-            // 마지막 구간 처리
-            CollapseAndRefillSegment(x, segmentStart, height - 1);
+            FillEmptyInSegment(x, segmentStart, height - 1, height - 1);
         }
     }
+
+    private void FillEmptyInSegment(int x, int startY, int endY, int spawnFromY)
+    {
+        if (startY > endY) return;
+
+        for (int y = startY; y <= endY; y++)
+        {
+            if (IsIce(x, y)) continue;
+            if (gems[x, y] != null) continue;
+
+            CreateGemAt(x, y, spawnFromY);
+        }
+    }
+
+    // srcY-1 칸이 막혀있으면(ICE or 다른 젬 or 바닥) 수직 낙하가 막힌 상태로 판단
+    private bool IsBlockedBelow(int srcX, int srcY)
+    {
+        int belowY = srcY - 1;
+        if (belowY < 0) return true;
+        if (IsIce(srcX, belowY)) return true;
+        return gems[srcX, belowY] != null;
+    }
+    private int GetSegmentTopY(int x, int y)
+    {
+        // y가 속한 세그먼트의 "최상단 y" (위로 올라가다가 ICE를 만나면 그 직전)
+        int top = y;
+        for (int yy = y + 1; yy < height; yy++)
+        {
+            if (IsIce(x, yy)) break;
+            top = yy;
+        }
+        return top;
+    }
+
 
     private void CollapseAndRefillSegment(int x, int startY, int endY)
     {
@@ -1371,17 +2122,34 @@ public class BoardManager : MonoBehaviour
             if (y != destY)
             {
                 gems[x, destY] = gems[x, y];
-                gems[x, destY].SetGridPosition(x, destY);
+
+                int cells = y - destY; // 몇 칸 떨어지는지
+                float dur = GetFlowDurationByCells(cells);
+
+                //  내려앉히기도 Flow 적용
+                gems[x, destY].SetGridPositionFlow(
+                    x, destY,
+                    dur,
+                    flowXSettleRatio,
+                    flowEaseY, flowEaseX,
+                    flowLandingSquash,
+                    flowSquashScaleY,
+                    flowSquashTime
+                );
+
                 gems[x, y] = null;
+
             }
             destY++;
         }
 
-        // 2) 위쪽 빈칸 채우기(세그먼트 안에서만)
         for (int y = destY; y <= endY; y++)
         {
-            CreateGemAt(x, y);
+            //  이 세그먼트(endY) 위에서 흘러나오게 (ICE 아래 구간도 자연스럽게)
+            CreateGemAt(x, y, endY);
         }
+
+
     }
 
 
@@ -1445,11 +2213,16 @@ public class BoardManager : MonoBehaviour
             int x = 0;
             while (x < width)
             {
-                if (gems[x, y] == null) { x++; continue; }
+                //  null 또는 ICE면 런 끊기
+                if (gems[x, y] == null || IsIce(x, y)) { x++; continue; }
+
                 int type = gems[x, y].type;
                 int startX = x;
                 x++;
-                while (x < width && gems[x, y] != null && gems[x, y].type == type) x++;
+
+                while (x < width && gems[x, y] != null && !IsIce(x, y) && gems[x, y].type == type)
+                    x++;
+
                 if (x - startX >= 3) return true;
             }
         }
@@ -1460,11 +2233,16 @@ public class BoardManager : MonoBehaviour
             int y = 0;
             while (y < height)
             {
-                if (gems[x, y] == null) { y++; continue; }
+                //  null 또는 ICE면 런 끊기
+                if (gems[x, y] == null || IsIce(x, y)) { y++; continue; }
+
                 int type = gems[x, y].type;
                 int startY = y;
                 y++;
-                while (y < height && gems[x, y] != null && gems[x, y].type == type) y++;
+
+                while (y < height && gems[x, y] != null && !IsIce(x, y) && gems[x, y].type == type)
+                    y++;
+
                 if (y - startY >= 3) return true;
             }
         }
@@ -1472,31 +2250,82 @@ public class BoardManager : MonoBehaviour
         return false;
     }
 
+
     private bool WouldSwapMakeMatch(int x1, int y1, int x2, int y2)
     {
         if (gems == null) return false;
-        if (gems[x1, y1] == null || gems[x2, y2] == null) return false;
-    
-        // ICE 칸이 하나라도 포함되면 스왑 불가
-        if (IsIce(x1, y1) || IsIce(x2, y2))
-            return false;
+
+        // ✅ ICE 칸은 스왑 후보/힌트 후보에서 제외
+        if (IsIce(x1, y1) || IsIce(x2, y2)) return false;
 
         Gem g1 = gems[x1, y1];
         Gem g2 = gems[x2, y2];
+        if (g1 == null || g2 == null) return false;
 
+        // 타입만 스왑 후, "스왑된 두 칸 주변"에서만 매치가 생겼는지 로컬 검사
         int t1 = g1.type;
         int t2 = g2.type;
 
         g1.type = t2;
         g2.type = t1;
 
-        bool match = HasAnyMatchOnBoard();
+        bool match = HasMatchAt(x1, y1) || HasMatchAt(x2, y2);
 
         g1.type = t1;
         g2.type = t2;
 
         return match;
     }
+    private bool HasMatchAt(int x, int y)
+    {
+        if (gems == null) return false;
+        if (x < 0 || x >= width || y < 0 || y >= height) return false;
+
+        if (IsIce(x, y)) return false;
+        Gem c = gems[x, y];
+        if (c == null) return false;
+
+        int type = c.type;
+
+        // Horizontal
+        int count = 1;
+        for (int xx = x - 1; xx >= 0; xx--)
+        {
+            if (IsIce(xx, y)) break;
+            Gem g = gems[xx, y];
+            if (g == null || g.type != type) break;
+            count++;
+        }
+        for (int xx = x + 1; xx < width; xx++)
+        {
+            if (IsIce(xx, y)) break;
+            Gem g = gems[xx, y];
+            if (g == null || g.type != type) break;
+            count++;
+        }
+        if (count >= 3) return true;
+
+        // Vertical
+        count = 1;
+        for (int yy = y - 1; yy >= 0; yy--)
+        {
+            if (IsIce(x, yy)) break;
+            Gem g = gems[x, yy];
+            if (g == null || g.type != type) break;
+            count++;
+        }
+        for (int yy = y + 1; yy < height; yy++)
+        {
+            if (IsIce(x, yy)) break;
+            Gem g = gems[x, yy];
+            if (g == null || g.type != type) break;
+            count++;
+        }
+
+        return count >= 3;
+    }
+
+
 
     private bool HasAnyPossibleMove()
     {
@@ -1508,30 +2337,43 @@ public class BoardManager : MonoBehaviour
             {
                 Gem g = gems[x, y];
                 if (g == null) continue;
-                //  ICE 칸은 무브 후보에서 제외
+
+                // ✅ ICE 칸은 무브 후보에서 제외
                 if (IsIce(x, y)) continue;
-                // 특수젬이 있으면 “스왑=액션” 가능성을 높게 본다(현 프로젝트 룰)
-                if (g.IsSpecial)
+
+                // --- 오른쪽 이웃 후보 ---
+                if (x < width - 1)
                 {
-                    if (x < width - 1 && gems[x + 1, y] != null && !IsIce(x + 1, y)) return true;
-                    if (y < height - 1 && gems[x, y + 1] != null && !IsIce(x, y + 1)) return true;
+                    Gem r = gems[x + 1, y];
+                    if (r != null && !IsIce(x + 1, y))
+                    {
+                        // ✅ 특수젬 스왑 즉시 발동 룰: 양쪽 중 하나라도 특수면 무브 가능으로 본다
+                        if (g.IsSpecial || r.IsSpecial) return true;
+
+                        // ✅ 일반젬 스왑이 매치를 만드는지 로컬 검사
+                        if (WouldSwapMakeMatch(x, y, x + 1, y)) return true;
+                    }
                 }
 
+                // --- 위쪽 이웃 후보 ---
+                if (y < height - 1)
+                {
+                    Gem u = gems[x, y + 1];
+                    if (u != null && !IsIce(x, y + 1))
+                    {
+                        // ✅ 특수젬 스왑 즉시 발동 룰
+                        if (g.IsSpecial || u.IsSpecial) return true;
 
-                if (x < width - 1 && gems[x + 1, y] != null && !IsIce(x + 1, y) && gems[x + 1, y].IsSpecial) return true;
-                if (y < height - 1 && gems[x, y + 1] != null && !IsIce(x, y + 1) && gems[x, y + 1].IsSpecial) return true;
-
-
-                if (x < width - 1 && gems[x + 1, y] != null)
-                    if (WouldSwapMakeMatch(x, y, x + 1, y)) return true;
-
-                if (y < height - 1 && gems[x, y + 1] != null)
-                    if (WouldSwapMakeMatch(x, y, x, y + 1)) return true;
+                        // ✅ 일반젬 스왑 매치 여부
+                        if (WouldSwapMakeMatch(x, y, x, y + 1)) return true;
+                    }
+                }
             }
         }
 
         return false;
     }
+
 
     private void ClearHint()
     {
@@ -1559,8 +2401,6 @@ public class BoardManager : MonoBehaviour
             {
                 Gem cur = gems[x, y];
                 if (cur == null) continue;
-
-                //  ICE 칸은 힌트 후보 제외 (IsIce가 널-세이프해야 함)
                 if (IsIce(x, y)) continue;
 
                 // 오른쪽 이웃
@@ -1744,27 +2584,21 @@ public class BoardManager : MonoBehaviour
 
         while (true)
         {
-            //  존재하는 함수명으로 호출해야 함 (CheckMatchesAndClear() 아님)
             int cleared = CheckMatchesAndClear_WithPromotionsSafe();
-            if (cleared == 0) break;
+            if (cleared <= 0) break;
 
             combo++;
             AddScoreForClear(cleared, comboMultiplier: combo);
 
-            // 팝/삭제 연출 대기
             yield return new WaitForSeconds(popDuration);
 
-            // 리필/낙하 대기
-            RefillBoard();
-            yield return new WaitForSeconds(fallWaitTime);
+            yield return StartCoroutine(RefillBoardRoutine());
         }
 
         if (combo > 0)
             ShowComboBanner(combo);
-
-        //  isAnimating은 여기서 건드리지 말고, 호출자가 관리
-        yield break;
     }
+
 
 
 
@@ -1877,6 +2711,13 @@ public class BoardManager : MonoBehaviour
         if (retryButton != null) retryButton.gameObject.SetActive(false);
         if (nextStageButton != null) nextStageButton.gameObject.SetActive(false);
     }
+    private IEnumerator AlignBoardNextFrame()
+    {
+        yield return null;
+        yield return null;
+        AlignBoardToMiddleArea();
+    }
+
 
     public void RestartGame()
     {
@@ -1894,12 +2735,14 @@ public class BoardManager : MonoBehaviour
 
         targetScore = goal;
         maxMoves = moves;
-
+        CacheGemBaseScale();
         ResetState();
 
         // 2) 보드 생성
         gems = new Gem[width, height];
         GenerateBoard();
+        StartCoroutine(AlignBoardNextFrame());
+
 
         // 3) ICE 배열 먼저 초기화 (중요: ApplyIce 전에!)
         InitIceArrays();
@@ -2669,6 +3512,7 @@ public class BoardManager : MonoBehaviour
 
     private IEnumerator ColorBombStripeComboRoutine(Gem colorBomb, Gem stripe)
     {
+        BeginIceHitWindow();
         if (colorBomb == null || stripe == null)
             yield break;
 
@@ -2747,7 +3591,6 @@ public class BoardManager : MonoBehaviour
 
         if (totalCleared > 0)
         {
-            // 이 콤보는 내부에서 턴 1회로 처리
             AddScoreForClear(totalCleared, comboMultiplier: 1);
 
             movesLeft--;
@@ -2756,33 +3599,11 @@ public class BoardManager : MonoBehaviour
             if (score >= targetScore) { EndGame(true); yield break; }
             if (movesLeft <= 0) { EndGame(false); yield break; }
 
-            RefillBoard();
-            yield return new WaitForSeconds(fallWaitTime);
-
-            // 리필 이후 캐스케이드(연쇄 매치) 처리 추가
-            int combo = 0;
-            while (true)
-            {
-                int cleared = CheckMatchesAndClear_WithPromotionsSafe();
-                if (cleared <= 0) break;
-
-                combo++;
-                AddScoreForClear(cleared, comboMultiplier: combo);
-
-                // 팝/삭제 연출 대기
-                yield return new WaitForSeconds(popDuration);
-
-                // 다음 리필 + 무브 없으면 셔플
-                yield return StartCoroutine(PostClearRefillAndEnsure());
-            }
-
-            // 무브 없으면 최종 셔플 (캐스케이드 종료 후)
-            yield return StartCoroutine(ResolveCascadesAfterRefill());
-
-            // 콤보 배너(필요하면)
-            ShowComboBanner(combo);
-
+            yield return new WaitForSeconds(popDuration);
+            yield return StartCoroutine(PostClearRefillAndEnsure());
+            yield break;
         }
+
     }
 
     private int ClearByMaskWithChain(bool[,] initialMask)
