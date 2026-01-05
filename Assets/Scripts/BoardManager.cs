@@ -74,6 +74,119 @@ public class BoardManager : MonoBehaviour
     public int targetScore = 500;
     public int defaultMaxMoves = 20;
 
+    public enum LevelGoalType
+    {
+        ScoreOnly,
+        ClearAllIce,
+        CollectColor,
+        ScoreAndClearAllIce,
+        ScoreAndCollectColor
+    }
+
+    [Header("Level Goal")]
+    public LevelGoalType levelGoalType = LevelGoalType.ScoreOnly;
+
+    // 캔디크러시처럼 “Objective + 최소 점수(1-star)” 느낌을 원하면 true
+    public bool requirePassScore = true;
+
+    // CollectColor용 (gemSprites index 기반)
+    public int collectGemType = 0;
+    public int collectTarget = 20;
+
+    // 런타임 진행도
+    private int collectedCount = 0;
+    private int totalIce = 0;
+    private int clearedIce = 0;
+
+    private void ResetGoalProgress()
+    {
+        collectedCount = 0;
+        clearedIce = 0;
+    }
+
+    private void RecountTotalIce()
+    {
+        totalIce = 0;
+        if (obstacles == null) return;
+
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+                if (obstacles[x, y] == ObstacleType.Ice) totalIce++;
+    }
+
+    private bool IsStageCleared()
+    {
+        // 패스 점수 요구 옵션
+        if (requirePassScore && score < passScore) return false;
+
+        switch (levelGoalType)
+        {
+            case LevelGoalType.ScoreOnly:
+                return score >= passScore;
+
+            case LevelGoalType.ClearAllIce:
+                return clearedIce >= totalIce;
+
+            case LevelGoalType.CollectColor:
+                return collectedCount >= collectTarget;
+
+            case LevelGoalType.ScoreAndClearAllIce:
+                return (score >= passScore) && (clearedIce >= totalIce);
+
+            case LevelGoalType.ScoreAndCollectColor:
+                return (score >= passScore) && (collectedCount >= collectTarget);
+
+            default:
+                return score >= passScore;
+        }
+    }
+
+    private float GetGoalProgress01()
+    {
+        float ScoreP() => (targetScore <= 0) ? 1f : Mathf.Clamp01((float)score / targetScore);
+        float IceP() => (totalIce <= 0) ? 1f : Mathf.Clamp01((float)clearedIce / totalIce);
+        float CollectP() => (collectTarget <= 0) ? 1f : Mathf.Clamp01((float)collectedCount / collectTarget);
+
+        switch (levelGoalType)
+        {
+            case LevelGoalType.ScoreOnly: return ScoreP();
+            case LevelGoalType.ClearAllIce: return IceP();
+            case LevelGoalType.CollectColor: return CollectP();
+            case LevelGoalType.ScoreAndClearAllIce: return Mathf.Min(ScoreP(), IceP());
+            case LevelGoalType.ScoreAndCollectColor: return Mathf.Min(ScoreP(), CollectP());
+            default: return ScoreP();
+        }
+    }
+
+    private void UpdateGoalTextUI()
+    {
+        if (goalText == null) return;
+
+        switch (levelGoalType)
+        {
+            case LevelGoalType.ScoreOnly:
+                goalText.text = $"Goal: {targetScore}";
+                break;
+
+            case LevelGoalType.ClearAllIce:
+                goalText.text = $"Goal: Break Ice {clearedIce}/{totalIce}";
+                break;
+
+            case LevelGoalType.CollectColor:
+                goalText.text = $"Goal: Collect {collectedCount}/{collectTarget}";
+                break;
+
+            case LevelGoalType.ScoreAndClearAllIce:
+                goalText.text = $"Goal: Ice {clearedIce}/{totalIce}  Score {score}/{targetScore}";
+                break;
+
+            case LevelGoalType.ScoreAndCollectColor:
+                goalText.text = $"Goal: Collect {collectedCount}/{collectTarget}  Score {score}/{targetScore}";
+                break;
+        }
+    }
+
+
     [Header("Game Rule UI")]
     public TMP_Text goalText;
     public TMP_Text movesText;
@@ -99,6 +212,24 @@ public class BoardManager : MonoBehaviour
     private bool star2Shown;
     private bool star3Shown;
 
+
+    [Header("Star Thresholds")]
+    public float star2Multiplier = 1.3f;
+    public float star3Multiplier = 1.6f;
+    public float starOffAlpha = 0.25f;
+    
+
+    private int passScore;
+    private int star2Score;
+    private int star3Score;
+
+    // 네가 코드에서 이미 star1Unlocked 같은 이름을 쓰고 있다면 이 이름 그대로 둔다
+    private bool star1Unlocked;
+    private bool star2Unlocked;
+    private bool star3Unlocked;
+
+    // 네 코드가 PassScore(대문자)를 직접 참조한다면, 아래 프로퍼티로 호환 처리
+    private int PassScore => passScore;
 
     [Header("Result Buttons")]
     public Button retryButton;
@@ -465,7 +596,10 @@ public class BoardManager : MonoBehaviour
             InitIceArrays();
             GenerateBoard();
             ApplyIceFromStageData(StageManager.Instance != null ? StageManager.Instance.CurrentStage : null);
-
+            RecountTotalIce();
+            ResetGoalProgress();
+            UpdateGoalTextUI();
+            UpdateGoalGaugeUI();
 
 
             ApplyIceForStage(GetStageNumberSafe());
@@ -875,12 +1009,78 @@ public class BoardManager : MonoBehaviour
 
     private void UpdateGoalUI()
     {
-        if (goalText != null)
-            goalText.text = $"Goal: {targetScore}";
+        if (goalFillImage == null) return;
+        if (targetScore <= 0) return;
 
-        ResetGoalGaugeUI();
-        UpdateGoalGaugeUI();
+        float t = Mathf.Clamp01((float)score / targetScore);
+        goalFillImage.fillAmount = t;
+
+        TryShowStar(t, star1Percent, ref star1Shown, star1Image);
+        TryShowStar(t, star2Percent, ref star2Shown, star2Image);
+        TryShowStar(t, star3Percent, ref star3Shown, star3Image);
     }
+
+    private void TryShowStar(float t, float percent, ref bool shownFlag, Image starImg)
+    {
+        if (starImg == null) return;
+
+        if (hideStarsUntilReached)
+        {
+            if (!shownFlag) starImg.gameObject.SetActive(false);
+        }
+        else
+        {
+            starImg.gameObject.SetActive(true);
+        }
+
+        if (shownFlag) return;
+        if (t + 0.0001f < percent) return;
+
+        shownFlag = true;
+        starImg.gameObject.SetActive(true);
+
+        starImg.transform.DOKill();
+        starImg.transform.localScale = Vector3.one;
+        starImg.transform
+            .DOScale(Vector3.one * starPopScale, starPopDuration * 0.5f)
+            .SetEase(Ease.OutBack)
+            .OnComplete(() =>
+            {
+                starImg.transform.DOScale(Vector3.one, starPopDuration * 0.5f).SetEase(Ease.OutQuad);
+            });
+
+        if (starReachedClip != null) PlaySfx(starReachedClip);
+    }
+
+
+    private void SetupStarThresholds()
+    {
+        passScore = Mathf.Max(1, targetScore);
+        star2Score = Mathf.Max(passScore, Mathf.CeilToInt(passScore * star2Multiplier));
+        star3Score = Mathf.Max(star2Score, Mathf.CeilToInt(passScore * star3Multiplier));
+
+        star1Unlocked = false;
+        star2Unlocked = false;
+        star3Unlocked = false;
+
+        ApplyStarVisual(star1Image, false);
+        ApplyStarVisual(star2Image, false);
+        ApplyStarVisual(star3Image, false);
+
+        if (goalFillImage != null)
+            goalFillImage.fillAmount = 0f;
+    }
+
+    private void ApplyStarVisual(Image img, bool on)
+    {
+        if (img == null) return;
+
+        var c = img.color;
+        c.a = on ? 1f : starOffAlpha;
+        img.color = c;
+    }
+
+    
 
 
     private void UpdateMovesUI()
@@ -907,21 +1107,19 @@ public class BoardManager : MonoBehaviour
 
     private void UpdateGoalGaugeUI()
     {
-        if (targetScore <= 0)
-        {
-            if (goalFillImage != null) goalFillImage.fillAmount = 0f;
-            return;
-        }
+        // (1) 게이지는 Goal 진행도
+        float pGoal = GetGoalProgress01();
+        if (goalFillImage != null) goalFillImage.fillAmount = pGoal;
 
-        float p = Mathf.Clamp01((float)score / targetScore);
+        // (2) 별은 점수 진행도(기존 유지)
+        if (targetScore <= 0) return;
+        float pScore = Mathf.Clamp01((float)score / targetScore);
 
-        if (goalFillImage != null)
-            goalFillImage.fillAmount = p;
-
-        HandleStarReached(star1Image, star1Percent, ref star1Shown, p);
-        HandleStarReached(star2Image, star2Percent, ref star2Shown, p);
-        HandleStarReached(star3Image, star3Percent, ref star3Shown, p);
+        HandleStarReached(star1Image, star1Percent, ref star1Shown, pScore);
+        HandleStarReached(star2Image, star2Percent, ref star2Shown, pScore);
+        HandleStarReached(star3Image, star3Percent, ref star3Shown, pScore);
     }
+
 
     private void HandleStarReached(Image star, float threshold, ref bool shown, float progress)
     {
@@ -1281,7 +1479,7 @@ public class BoardManager : MonoBehaviour
         movesLeft--;
         UpdateMovesUI();
 
-        if (score >= targetScore) { EndGame(true); yield break; }
+        if (IsStageCleared()) { EndGame(true); yield break; }
         if (movesLeft <= 0) { EndGame(false); yield break; }
 
         // 턴 종료 시점에서 보드가 막혔으면 셔플
@@ -1297,7 +1495,29 @@ public class BoardManager : MonoBehaviour
         idleTimer = 0f;
         yield break;
     }
+    private void RegisterGemCollectedIfNeeded(Gem g)
+    {
+        if (g == null) return;
 
+        // CollectColor 계열 목표일 때만 카운트
+        bool needCollect = (levelGoalType == LevelGoalType.CollectColor ||
+                            levelGoalType == LevelGoalType.ScoreAndCollectColor);
+
+        if (!needCollect) return;
+
+        if (g.type == collectGemType)
+        {
+            collectedCount++;
+            UpdateGoalTextUI();
+            UpdateGoalGaugeUI();
+        }
+    }
+    private void RegisterIceDestroyed()
+    {
+        clearedIce++;
+        UpdateGoalTextUI();
+        UpdateGoalGaugeUI();
+    }
     private void AddScoreForClear(int clearedCount, int comboMultiplier)
     {
         // comboMultiplier: 1부터 시작
@@ -2735,6 +2955,8 @@ public class BoardManager : MonoBehaviour
 
         targetScore = goal;
         maxMoves = moves;
+        SetupStarThresholds();
+        UpdateGoalUI();
         CacheGemBaseScale();
         ResetState();
 
@@ -2945,6 +3167,9 @@ public class BoardManager : MonoBehaviour
         // ===== 아직 안 깨짐 =====
         if (iceHp[x, y] > 0)
             return;
+       
+        // 최종 파괴 확정 시점 (obstacles None으로 내리기 전에든 후든 1회만 보장되면 OK)
+        RegisterIceDestroyed();
 
         // ===== 최종 파괴(HP==0) =====
         if (iceHp[x, y] > 0) return;
@@ -3596,7 +3821,7 @@ public class BoardManager : MonoBehaviour
             movesLeft--;
             UpdateMovesUI();
 
-            if (score >= targetScore) { EndGame(true); yield break; }
+            if (IsStageCleared()) { EndGame(true); yield break; }
             if (movesLeft <= 0) { EndGame(false); yield break; }
 
             yield return new WaitForSeconds(popDuration);
@@ -3631,6 +3856,9 @@ public class BoardManager : MonoBehaviour
             int y = p.y;
 
             Gem g = gems[x, y];
+            // 젬 제거 직전
+            RegisterGemCollectedIfNeeded(g);
+
             if (g == null) continue;
 
             if (!g.IsSpecial) continue;
