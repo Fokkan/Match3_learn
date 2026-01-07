@@ -1,19 +1,10 @@
 fileFormatVersion: 2
-guid: 87970308943d9a64b9116f6a1727fb75
+guid: f1b41be874d7f4d4889095a95b6dc5c0
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -599239779167545910
-    second: special_gems_0
-  - first:
-      213: 2089717927940913464
-    second: special_gems_1
-  - first:
-      213: -5653763009156058411
-    second: special_gems_2
-  - first:
-      213: -6401226255081047871
-    second: special_gems_3
+      213: -4414349064699393926
+    second: gem_ring_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -57,10 +48,10 @@ TextureImporter:
   compressionQuality: 50
   spriteMode: 2
   spriteExtrude: 1
-  spriteMeshType: 1
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 350
+  spritePixelsToUnits: 310
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -187,89 +178,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Gem_RowBomb
+      name: gem_ring_0
       rect:
         serializedVersion: 2
-        x: 121
-        y: 575
-        width: 336
-        height: 328
+        x: 8
+        y: 5
+        width: 295
+        height: 294
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ac55f6388921fa7f0800000000000000
-      internalID: -599239779167545910
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Gem_ColorBomb
-      rect:
-        serializedVersion: 2
-        x: 567
-        y: 122
-        width: 346
-        height: 342
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 839fea7326b200d10800000000000000
-      internalID: 2089717927940913464
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Gem_ColBomb
-      rect:
-        serializedVersion: 2
-        x: 577
-        y: 576
-        width: 332
-        height: 327
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 5d272038f7cc981b0800000000000000
-      internalID: -5653763009156058411
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Gem_Wrapped
-      rect:
-        serializedVersion: 2
-        x: 111
-        y: 130
-        width: 348
-        height: 334
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 1c87dfad2a64a27a0800000000000000
-      internalID: -6401226255081047871
+      spriteID: a78c304f9e41db2c0800000000000000
+      internalID: -4414349064699393926
       vertices: []
       indices: 
       edges: []
@@ -278,7 +203,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 09411d487d2eb2c4daa331fcfba368af
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -288,10 +213,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Gem_ColBomb: -5653763009156058411
-      Gem_ColorBomb: 2089717927940913464
-      Gem_RowBomb: -599239779167545910
-      Gem_Wrapped: -6401226255081047871
+      gem_ring_0: -4414349064699393926
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

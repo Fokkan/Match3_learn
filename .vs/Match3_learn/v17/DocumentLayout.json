@@ -7,12 +7,12 @@
       "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\boardmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\assets\\scripts\\stagemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stagemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\assets\\scripts\\gem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\assets\\scripts\\stagemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stagemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\assets\\scripts\\stagedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -36,14 +36,14 @@
               "RelativeDocumentMoniker": "Assets\\Scripts\\BoardManager.cs",
               "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\Assets\\Scripts\\BoardManager.cs",
               "RelativeToolTip": "Assets\\Scripts\\BoardManager.cs",
-              "ViewState": "AgIAAN8FAAAAAAAAAAAmwPYFAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAKgIAAAAAAAAAAAcwL4IAABGAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-30T05:39:09.004Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "StageManager.cs",
               "DocumentMoniker": "C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\Assets\\Scripts\\StageManager.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\StageManager.cs",
@@ -67,15 +67,16 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": "Gem.cs",
               "DocumentMoniker": "C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\Assets\\Scripts\\Gem.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Gem.cs",
               "ToolTip": "C:\\myUnityproject\\match3\\Match3_Game_1\\Match3_learn\\Assets\\Scripts\\Gem.cs",
               "RelativeToolTip": "Assets\\Scripts\\Gem.cs",
-              "ViewState": "AgIAAOQAAAAAAAAAAAAvwO8AAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAGIBAAAAAAAAAAAMwH4BAAAtAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-09T02:29:44.688Z"
+              "WhenOpened": "2025-12-09T02:29:44.688Z",
+              "EditorCaption": ""
             }
           ]
         }
