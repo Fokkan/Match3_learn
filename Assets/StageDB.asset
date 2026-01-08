@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: StageDB
   m_EditorClassIdentifier: 
   stages:
-  - stageID: 1
+  - iceCage: 
+    stageID: 1
     targetScore: 500
     maxMoves: 20
     boardWidth: 5
@@ -21,7 +22,11 @@ MonoBehaviour:
     useObstacles: 0
     obstacleCount: 0
     obstacleLevel: 0
-  - stageID: 2
+    useCollectGoal: 0
+    requirePassScore: 0
+    collectTargets: []
+  - iceCage: 
+    stageID: 2
     targetScore: 800
     maxMoves: 30
     boardWidth: 5
@@ -29,7 +34,15 @@ MonoBehaviour:
     useObstacles: 0
     obstacleCount: 0
     obstacleLevel: 0
-  - stageID: 3
+    useCollectGoal: 1
+    requirePassScore: 0
+    collectTargets:
+    - gemType: 1
+      target: 10
+    - gemType: 2
+      target: 10
+  - iceCage: 
+    stageID: 3
     targetScore: 1200
     maxMoves: 20
     boardWidth: 6
@@ -37,7 +50,17 @@ MonoBehaviour:
     useObstacles: 0
     obstacleCount: 0
     obstacleLevel: 0
-  - stageID: 4
+    useCollectGoal: 1
+    requirePassScore: 0
+    collectTargets:
+    - gemType: 3
+      target: 30
+    - gemType: 5
+      target: 30
+    - gemType: 8
+      target: 30
+  - iceCage: 
+    stageID: 4
     targetScore: 1500
     maxMoves: 22
     boardWidth: 6
@@ -45,7 +68,15 @@ MonoBehaviour:
     useObstacles: 1
     obstacleCount: 3
     obstacleLevel: 1
-  - stageID: 5
+    useCollectGoal: 1
+    requirePassScore: 0
+    collectTargets:
+    - gemType: 3
+      target: 40
+    - gemType: 3
+      target: 40
+  - iceCage: 
+    stageID: 5
     targetScore: 1800
     maxMoves: 22
     boardWidth: 7
@@ -53,7 +84,17 @@ MonoBehaviour:
     useObstacles: 1
     obstacleCount: 6
     obstacleLevel: 2
-  - stageID: 6
+    useCollectGoal: 1
+    requirePassScore: 0
+    collectTargets:
+    - gemType: 1
+      target: 30
+    - gemType: 5
+      target: 30
+    - gemType: 7
+      target: 30
+  - iceCage: 
+    stageID: 6
     targetScore: 2200
     maxMoves: 24
     boardWidth: 8
@@ -61,3 +102,14 @@ MonoBehaviour:
     useObstacles: 1
     obstacleCount: 9
     obstacleLevel: 3
+    useCollectGoal: 1
+    requirePassScore: 0
+    collectTargets:
+    - gemType: 1
+      target: 30
+    - gemType: 2
+      target: 30
+    - gemType: 5
+      target: 30
+    - gemType: 8
+      target: 30

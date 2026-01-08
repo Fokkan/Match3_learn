@@ -11,15 +11,32 @@ public class StageData
     [Header("Obstacles - Ice Cage (0:none, 1:ice)")]
     public int[] iceCage;
 
-    // 스테이지 기본 정보
-    public int stageID;         // 스테이지 번호(표시용)
-    public int targetScore;     // 목표 점수
+    [Header("Stage Base")]
+    public int stageID;         // 표기용 스테이지 번호
+    public int targetScore;     // 목표 점수(현재 정책에서는 보통 클리어 조건에 미사용)
     public int maxMoves;        // 제한 횟수
-    public int boardWidth = 8;  // 보드 가로 크기
-    public int boardHeight = 8; // 보드 세로 크기
+    public int boardWidth = 8;  // 보드 가로
+    public int boardHeight = 8; // 보드 세로
 
-    // 방해요소용 확장 데이터 (추후 사용 예정)
-    public bool useObstacles = false; // 이 스테이지에서 방해요소 사용 여부
-    public int obstacleCount = 0;     // 장애물 개수(대략)
-    public int obstacleLevel = 0;     // 난이도/단계 (0=없음, 1,2,3...)
+    [Header("Obstacles - Ice")]
+    public bool useObstacles = false; // ICE 사용 여부
+    public int obstacleCount = 0;     // 랜덤 ICE 개수(iceCage 없을 때)
+    public int obstacleLevel = 0;     // 클러스터 룰 레벨(0~)
+
+    [Header("Goal - Collect (2~4 colors recommended)")]
+    public bool useCollectGoal = false;
+
+    // Collect만 달성하면 클리어면 보통 false 유지(점수 조건 막지 않음)
+    public bool requirePassScore = false;
+
+    [Serializable]
+    public struct CollectTarget
+    {
+        // gemSprites 인덱스(= Gem.type) 기준
+        public int gemType;
+        public int target;
+    }
+
+    // 스테이지마다 2~4개 권장
+    public CollectTarget[] collectTargets;
 }

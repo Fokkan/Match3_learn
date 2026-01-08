@@ -1,10 +1,13 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using TMPro;
 using DG.Tweening;
+using TMPro;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
+
 
 
 public class BoardManager : MonoBehaviour
@@ -79,9 +82,13 @@ public class BoardManager : MonoBehaviour
         ScoreOnly,
         ClearAllIce,
         CollectColor,
+        CollectMultiColor,                 
+        ClearAllIceAndCollectMultiColor,
         ScoreAndClearAllIce,
         ScoreAndCollectColor
     }
+
+
     [Header("Goal Stars Options")]
     [SerializeField] private bool hideStarsUntilReached = true;
 
@@ -192,6 +199,60 @@ public class BoardManager : MonoBehaviour
     // CollectColor용 (gemSprites index 기반)
     public int collectGemType = 0;
     public int collectTarget = 20;
+    private int[] collectGemTypesMulti = null;
+    private int[] collectTargetsMulti = null;
+    private int[] collectedMulti = null;
+
+    // Goal UI에서 진행도 갱신을 받을 수 있도록 이벤트 제공
+    public event Action OnGoalProgressChanged;
+
+    private void NotifyGoalProgressChanged()
+    {
+        OnGoalProgressChanged?.Invoke();
+    }
+
+    // Collect(단일/멀티) 목표 데이터를 UI가 읽을 수 있게 제공
+    // - 단일 CollectColor도 멀티 형태(길이 1 배열)로 반환
+    public bool TryGetCollectGoalData(out int[] gemTypes, out int[] targets, out int[] collected)
+    {
+        gemTypes = null;
+        targets = null;
+        collected = null;
+
+        // 단일 Collect
+        if (levelGoalType == LevelGoalType.CollectColor || levelGoalType == LevelGoalType.ScoreAndCollectColor)
+        {
+            gemTypes = new[] { collectGemType };
+            targets = new[] { collectTarget };
+            collected = new[] { collectedCount };
+            return true;
+        }
+
+        // 멀티 Collect
+        if (levelGoalType == LevelGoalType.CollectMultiColor || levelGoalType == LevelGoalType.ClearAllIceAndCollectMultiColor)
+        {
+            if (collectGemTypesMulti == null || collectTargetsMulti == null || collectedMulti == null) return false;
+
+            gemTypes = (int[])collectGemTypesMulti.Clone();
+            targets = (int[])collectTargetsMulti.Clone();
+            collected = (int[])collectedMulti.Clone();
+            return true;
+        }
+
+        return false;
+    }
+
+    // ICE 남은 개수
+    public int GetIceRemaining()
+    {
+        return Mathf.Max(0, totalIce - clearedIce);
+    }
+
+    public int GetTotalIce()
+    {
+        return totalIce;
+    }
+
 
     // 런타임 진행도
     private int collectedCount = 0;
@@ -202,7 +263,14 @@ public class BoardManager : MonoBehaviour
     {
         collectedCount = 0;
         clearedIce = 0;
+
+        if (collectedMulti != null)
+        {
+            Array.Clear(collectedMulti, 0, collectedMulti.Length);
+        }
+        NotifyGoalProgressChanged();
     }
+
 
     private void RecountTotalIce()
     {
@@ -216,36 +284,83 @@ public class BoardManager : MonoBehaviour
 
     private bool IsStageCleared()
     {
-        // 패스 점수 요구 옵션
-        if (requirePassScore && score < passScore) return false;
-
         switch (levelGoalType)
         {
+            // 점수만 보는 스테이지
             case LevelGoalType.ScoreOnly:
                 return score >= passScore;
 
+            // 얼음만 깨면 클리어 (옵션으로 최소 점수도 요구 가능)
             case LevelGoalType.ClearAllIce:
+                if (requirePassScore && score < passScore) return false;
                 return clearedIce >= totalIce;
 
+            // Collect 단일
             case LevelGoalType.CollectColor:
                 return collectedCount >= collectTarget;
 
+            // Collect 멀티(2~4색)
+            case LevelGoalType.CollectMultiColor:
+                {
+                    if (collectTargetsMulti == null || collectedMulti == null) return false;
+                    for (int i = 0; i < collectTargetsMulti.Length; i++)
+                    {
+                        if (collectedMulti[i] < collectTargetsMulti[i]) return false;
+                    }
+                    return true;
+                }
+
+            // ICE + Collect 멀티
+            // 네 요구사항: “Collect만 달성하면 클리어”라면 ICE도 같이 달성해야 한다는 전제가 들어가므로,
+            // 이 타입은 ICE + Collect 둘 다 만족해야 true가 맞다.
+            case LevelGoalType.ClearAllIceAndCollectMultiColor:
+                {
+                    if (clearedIce < totalIce) return false;
+
+                    if (collectTargetsMulti == null || collectedMulti == null) return false;
+                    for (int i = 0; i < collectTargetsMulti.Length; i++)
+                    {
+                        if (collectedMulti[i] < collectTargetsMulti[i]) return false;
+                    }
+                    return true;
+                }
+
+            // 점수 + 얼음
             case LevelGoalType.ScoreAndClearAllIce:
                 return (score >= passScore) && (clearedIce >= totalIce);
 
+            // 점수 + Collect 단일
             case LevelGoalType.ScoreAndCollectColor:
                 return (score >= passScore) && (collectedCount >= collectTarget);
 
             default:
+                // 안전장치: 기존처럼 최소 점수 요구 옵션이 켜져 있으면 막음
+                if (requirePassScore && score < passScore) return false;
                 return score >= passScore;
         }
     }
+
 
     private float GetGoalProgress01()
     {
         float ScoreP() => (targetScore <= 0) ? 1f : Mathf.Clamp01((float)score / targetScore);
         float IceP() => (totalIce <= 0) ? 1f : Mathf.Clamp01((float)clearedIce / totalIce);
         float CollectP() => (collectTarget <= 0) ? 1f : Mathf.Clamp01((float)collectedCount / collectTarget);
+        float MultiCollectP()
+        {
+            if (collectTargetsMulti == null || collectedMulti == null) return 0f;
+            if (collectTargetsMulti.Length == 0) return 1f;
+
+            float p = 1f;
+            for (int i = 0; i < collectTargetsMulti.Length; i++)
+            {
+                int tgt = collectTargetsMulti[i];
+                float r = (tgt <= 0) ? 1f : Mathf.Clamp01((float)collectedMulti[i] / tgt);
+                p = Mathf.Min(p, r);
+            }
+            return p;
+        }
+
 
         switch (levelGoalType)
         {
@@ -254,6 +369,9 @@ public class BoardManager : MonoBehaviour
             case LevelGoalType.CollectColor: return CollectP();
             case LevelGoalType.ScoreAndClearAllIce: return Mathf.Min(ScoreP(), IceP());
             case LevelGoalType.ScoreAndCollectColor: return Mathf.Min(ScoreP(), CollectP());
+            case LevelGoalType.CollectMultiColor: return MultiCollectP();
+            case LevelGoalType.ClearAllIceAndCollectMultiColor: return Mathf.Min(IceP(), MultiCollectP());
+
             default: return ScoreP();
         }
     }
@@ -283,6 +401,48 @@ public class BoardManager : MonoBehaviour
             case LevelGoalType.ScoreAndCollectColor:
                 goalText.text = $"Goal: Collect {collectedCount}/{collectTarget}  Score {score}/{targetScore}";
                 break;
+            case LevelGoalType.CollectMultiColor:
+                {
+                    if (collectTargetsMulti == null || collectedMulti == null)
+                    {
+                        goalText.text = "Goal: Collect (Not Set)";
+                        break;
+                    }
+
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                    sb.Append("Goal: Collect ");
+                    for (int i = 0; i < collectTargetsMulti.Length; i++)
+                    {
+                        if (i > 0) sb.Append(" | ");
+                        sb.Append($"T{collectGemTypesMulti[i]} {collectedMulti[i]}/{collectTargetsMulti[i]}");
+                    }
+                    goalText.text = sb.ToString();
+                    break;
+                }
+
+            case LevelGoalType.ClearAllIceAndCollectMultiColor:
+                {
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                    sb.Append($"Goal: Ice {clearedIce}/{totalIce}  ");
+
+                    if (collectTargetsMulti == null || collectedMulti == null)
+                    {
+                        sb.Append("Collect (Not Set)");
+                    }
+                    else
+                    {
+                        sb.Append("Collect ");
+                        for (int i = 0; i < collectTargetsMulti.Length; i++)
+                        {
+                            if (i > 0) sb.Append(" | ");
+                            sb.Append($"T{collectGemTypesMulti[i]} {collectedMulti[i]}/{collectTargetsMulti[i]}");
+                        }
+                    }
+
+                    goalText.text = sb.ToString();
+                    break;
+                }
+
         }
     }
 
@@ -537,6 +697,57 @@ public class BoardManager : MonoBehaviour
         // 결정적 랜덤(같은 스테이지면 같은 배치) 권장: seed에 stageID 활용
         int seed = s.stageID * 1000 + 12345; //
         PlaceRandomIceWithRules(s.obstacleCount, seed, rules);
+    }
+    private void ApplyGoalFromStageData(StageData s)
+    {
+        // 기본값: 인스펙터 설정 유지(디버그/단독 실행 대비)
+        collectGemTypesMulti = null;
+        collectTargetsMulti = null;
+        collectedMulti = null;
+
+        if (s == null) return;
+
+        // 스테이지에서 Collect 목표를 쓰지 않으면 기존 goalType 유지
+        if (!s.useCollectGoal || s.collectTargets == null || s.collectTargets.Length == 0)
+            return;
+
+        // 스테이지 단위로 requirePassScore를 오버라이드
+        requirePassScore = s.requirePassScore;
+
+        // 2~4개 권장: 중복 gemType 제거 + 유효값만 수집
+        List<int> types = new List<int>(4);
+        List<int> targets = new List<int>(4);
+
+        for (int i = 0; i < s.collectTargets.Length; i++)
+        {
+            int t = s.collectTargets[i].gemType;
+            int goal = s.collectTargets[i].target;
+
+            if (goal <= 0) continue;
+            if (t < 0) continue;
+            if (gemSprites != null && t >= gemSprites.Length) continue;
+
+            // 중복 타입 제거(첫 항목 우선)
+            if (types.Contains(t)) continue;
+
+            types.Add(t);
+            targets.Add(goal);
+
+            if (types.Count >= 4) break; // 최대 4개 제한
+        }
+
+        if (types.Count == 0) return;
+
+        collectGemTypesMulti = types.ToArray();
+        collectTargetsMulti = targets.ToArray();
+        collectedMulti = new int[types.Count];
+
+        // 블로커(ICE) 스테이지면: ICE AND Collect
+        // totalIce는 RecountTotalIce() 이후 값이므로, ApplyGoalFromStageData는 Recount 이후에 호출해야 함.
+        if (totalIce > 0)
+            levelGoalType = LevelGoalType.ClearAllIceAndCollectMultiColor;
+        else
+            levelGoalType = LevelGoalType.CollectMultiColor;
     }
 
     private void AlignBoardToMiddleArea()
@@ -2678,29 +2889,53 @@ public class BoardManager : MonoBehaviour
         idleTimer = 0f;
         yield break;
     }
-    private void RegisterGemCollectedIfNeeded(Gem g)
+    void RegisterGemCollectedIfNeeded(Gem g)
     {
         if (g == null) return;
 
-        // CollectColor 계열 목표일 때만 카운트
-        bool needCollect = (levelGoalType == LevelGoalType.CollectColor ||
-                            levelGoalType == LevelGoalType.ScoreAndCollectColor);
+        bool needCollect =
+            (levelGoalType == LevelGoalType.CollectColor ||
+             levelGoalType == LevelGoalType.ScoreAndCollectColor ||
+             levelGoalType == LevelGoalType.CollectMultiColor ||
+             levelGoalType == LevelGoalType.ClearAllIceAndCollectMultiColor);
 
         if (!needCollect) return;
 
-        if (g.type == collectGemType)
+        // 1) 기존 단일 색 Collect 호환
+        if (levelGoalType == LevelGoalType.CollectColor || levelGoalType == LevelGoalType.ScoreAndCollectColor)
         {
-            collectedCount++;
+            if (g.type == collectGemType)
+            {
+                collectedCount++;
+                UpdateGoalTextUI();
+                UpdateGoalGaugeUI();
+                NotifyGoalProgressChanged();
+            }
+            return;
+        }
+
+        // 2) 멀티 Collect
+        if (collectGemTypesMulti == null || collectTargetsMulti == null || collectedMulti == null) return;
+
+        for (int i = 0; i < collectGemTypesMulti.Length; i++)
+        {
+            if (g.type != collectGemTypesMulti[i]) continue;
+
+            collectedMulti[i]++;
             UpdateGoalTextUI();
             UpdateGoalGaugeUI();
+            NotifyGoalProgressChanged();
+            return;
         }
     }
+
 
     private void RegisterIceDestroyed()
     {
         clearedIce++;
         UpdateGoalTextUI();
         UpdateGoalGaugeUI();
+        NotifyGoalProgressChanged();
     }
     private void AddFlatScore(int points)
     {
@@ -4362,6 +4597,15 @@ public class BoardManager : MonoBehaviour
             // ApplyIceForStage(stageNumber);
             // 지금은 “단일 루트” 원칙이면 그냥 비워도 됨.
         }
+        // ICE 개수 재계산 + GoalType 적용(ICE 스테이지면 AND로 자동 전환)
+        RecountTotalIce();
+        ApplyGoalFromStageData(StageManager.Instance != null ? StageManager.Instance.CurrentStage : null);
+        Debug.Log($"[Stage] id={StageManager.Instance?.CurrentStage?.stageID} useCollect={StageManager.Instance?.CurrentStage?.useCollectGoal} targets={StageManager.Instance?.CurrentStage?.collectTargets?.Length} totalIce={totalIce} goalType={levelGoalType}");
+
+        // 런타임 진행도 리셋 + UI 갱신
+        ResetGoalProgress();
+        UpdateGoalTextUI();
+        UpdateGoalGaugeUI();
 
         // 5) 시작 1회 보드 검증(즉시 매치 제거 + 무브 확보)
         StartCoroutine(ShuffleRoutine(force: false));
@@ -5175,17 +5419,21 @@ public class BoardManager : MonoBehaviour
 
         if (colorBomb != null && gems[colorBomb.x, colorBomb.y] == colorBomb)
         {
+            RegisterGemCollectedIfNeeded(colorBomb);
             gems[colorBomb.x, colorBomb.y] = null;
             Destroy(colorBomb.gameObject);
             totalCleared++;
         }
 
+
         if (stripe != null && gems[stripe.x, stripe.y] == stripe)
         {
+            RegisterGemCollectedIfNeeded(stripe);
             gems[stripe.x, stripe.y] = null;
             Destroy(stripe.gameObject);
             totalCleared++;
         }
+
 
         foreach (Gem g in converted)
         {
@@ -5241,8 +5489,6 @@ public class BoardManager : MonoBehaviour
             int y = p.y;
 
             Gem g = gems[x, y];
-            // 젬 제거 직전
-            RegisterGemCollectedIfNeeded(g);
 
             if (g == null) continue;
 
@@ -5316,6 +5562,8 @@ public class BoardManager : MonoBehaviour
                 BreakAdjacentIceAt(x, y, iceHitThisPass);
 
                 Gem g = gems[x, y];
+                // 실제 삭제 확정 시점에서만 Collect 카운트
+                RegisterGemCollectedIfNeeded(g);
                 gems[x, y] = null;
                 cleared++;
 

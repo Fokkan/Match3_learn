@@ -61,15 +61,29 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.0.60f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\AudioInitializer.cs" />
+    <Compile Include="Assets\Scripts\BoardWorldAnchorUI.cs" />
+    <Compile Include="Assets\StageSlider.cs" />
     <Compile Include="Assets\Scripts\StageData.cs" />
     <Compile Include="Assets\Scripts\StageDatabase.cs" />
     <Compile Include="Assets\Scripts\StageSelectUI.cs" />
+    <Compile Include="Assets\BGMManager.cs" />
     <Compile Include="Assets\Scripts\StageManager.cs" />
+    <Compile Include="Assets\Scripts\StageEnterButton.cs" />
+    <Compile Include="Assets\Scripts\CollectGoalHUDUI.cs" />
     <Compile Include="Assets\Scripts\StageSelectPanelController.cs" />
+    <Compile Include="Assets\ReturnButtonHandler.cs" />
+    <Compile Include="Assets\Scripts\CartHitButton.cs" />
+    <Compile Include="Assets\Scripts\GamePlayStageBootstrap.cs" />
     <Compile Include="Assets\Scripts\Gem.cs" />
     <Compile Include="Assets\Scripts\UIPulseText.cs" />
+    <Compile Include="Assets\Scripts\GameSession.cs" />
+    <Compile Include="Assets\SettingsMenu.cs" />
+    <Compile Include="Assets\ButtonSoundPlayer.cs" />
     <Compile Include="Assets\Scripts\StageButton.cs" />
+    <Compile Include="Assets\SimpleVolume.cs" />
     <Compile Include="Assets\Scripts\BoardManager.cs" />
+    <Compile Include="Assets\SceneLoader.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />

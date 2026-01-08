@@ -66,11 +66,24 @@ public class StageManager : MonoBehaviour
         Instance = this;
     }
 
+    [SerializeField] private string selectedStageKey = "SelectedStageIndex";
+    [SerializeField] private bool autoSelectFromPrefsOnStart = true;
+
     private void Start()
     {
-        // 씬 시작 시: 스테이지 셀렉트 BGM 재생
         PlayStageSelectBgm();
+
+        if (!autoSelectFromPrefsOnStart) return;
+        if (stageDB == null || stageDB.stages == null || stageDB.stages.Length == 0) return;
+        if (!PlayerPrefs.HasKey(selectedStageKey)) return;
+
+        int idx = PlayerPrefs.GetInt(selectedStageKey, 0);
+        idx = Mathf.Clamp(idx, 0, stageDB.stages.Length - 1);
+
+        Debug.Log($"[StageManager] Auto Select from prefs -> index={idx}");
+        SelectStage(idx);
     }
+
 
     #region BGM 제어
 
