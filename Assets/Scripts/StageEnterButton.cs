@@ -23,6 +23,14 @@ public class StageEnterButton : MonoBehaviour
         PlayerPrefs.Save();
 
         Debug.Log($"[StageEnterButton] Enter -> index={index}, scene={gameplaySceneName}");
+        var all = FindObjectsOfType<AudioSource>(true);
+        for (int i = 0; i < all.Length; i++)
+        {
+            var src = all[i];
+            if (src == null) continue;
+            if (src.isPlaying && src.loop)
+                src.Stop();
+        }
         SceneManager.LoadScene(gameplaySceneName);
     }
 }

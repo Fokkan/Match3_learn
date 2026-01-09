@@ -17,6 +17,10 @@ public class StageData
     public int maxMoves;        // 제한 횟수
     public int boardWidth = 8;  // 보드 가로
     public int boardHeight = 8; // 보드 세로
+    [Header("UI Text")]
+    public string stageTitle;           // 예: "STAGE 1" 또는 "1"
+    [TextArea(2, 5)]
+    public string stageDescription;     // 하단 설명 텍스트
 
     [Header("Obstacles - Ice")]
     public bool useObstacles = false; // ICE 사용 여부

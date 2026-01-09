@@ -140,7 +140,7 @@ GameObject:
   - component: {fileID: 381760773}
   - component: {fileID: 381760772}
   m_Layer: 0
-  m_Name: "\uC2DC\uC791\uD654\uBA74 \uCE90\uB9AD\uD130_0"
+  m_Name: Start_Moley
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -802,7 +802,7 @@ GameObject:
   - component: {fileID: 842608563}
   - component: {fileID: 842608562}
   m_Layer: 0
-  m_Name: "\uC2DC\uC791\uD654\uBA74 \uBC30\uACBD_0"
+  m_Name: Start_BG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
