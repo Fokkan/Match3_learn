@@ -1,46 +1,42 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
-/// <summary>
-/// 개별 스테이지 설정 데이터.
-/// ScriptableObject(StageDatabase)에 배열로 묶어서 사용한다.
-/// </summary>
+[Serializable]
+public class CollectTarget
+{
+    public int gemType;
+    public int target;
+}
+
 [Serializable]
 public class StageData
 {
-    [Header("Obstacles - Ice Cage (0:none, 1:ice)")]
-    public int[] iceCage;
+    // YAML: stageID
+    [FormerlySerializedAs("stageId")]
+    public int stageID = 1;
 
-    [Header("Stage Base")]
-    public int stageID;         // 표기용 스테이지 번호
-    public int targetScore;     // 목표 점수(현재 정책에서는 보통 클리어 조건에 미사용)
-    public int maxMoves;        // 제한 횟수
-    public int boardWidth = 8;  // 보드 가로
-    public int boardHeight = 8; // 보드 세로
-    [Header("UI Text")]
-    public string stageTitle;           // 예: "STAGE 1" 또는 "1"
-    [TextArea(2, 5)]
-    public string stageDescription;     // 하단 설명 텍스트
+    // (선택) 설명 텍스트
+    [TextArea] public string stageDescription;
 
-    [Header("Obstacles - Ice")]
-    public bool useObstacles = false; // ICE 사용 여부
-    public int obstacleCount = 0;     // 랜덤 ICE 개수(iceCage 없을 때)
-    public int obstacleLevel = 0;     // 클러스터 룰 레벨(0~)
+    public int targetScore = 500;
+    public int maxMoves = 20;
 
-    [Header("Goal - Collect (2~4 colors recommended)")]
+    public int boardWidth = 5;
+    public int boardHeight = 5;
+
+    public bool useObstacles = false;
+    public int obstacleCount = 0;
+    public int obstacleLevel = 0;
+
     public bool useCollectGoal = false;
 
-    // Collect만 달성하면 클리어면 보통 false 유지(점수 조건 막지 않음)
+    // YAML은 0/1로 저장돼도 bool로 문제 없이 로드됩니다.
     public bool requirePassScore = false;
 
-    [Serializable]
-    public struct CollectTarget
-    {
-        // gemSprites 인덱스(= Gem.type) 기준
-        public int gemType;
-        public int target;
-    }
+    public List<CollectTarget> collectTargets = new List<CollectTarget>();
 
-    // 스테이지마다 2~4개 권장
-    public CollectTarget[] collectTargets;
+    // YAML: iceCage
+    public int[] iceCage;
 }

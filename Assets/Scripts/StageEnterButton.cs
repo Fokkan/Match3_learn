@@ -3,34 +3,41 @@ using UnityEngine.SceneManagement;
 
 public class StageEnterButton : MonoBehaviour
 {
-    [Header("Wiring")]
+    [Header("Refs")]
     [SerializeField] private StageSlider stageSlider;
+    [SerializeField] private StageDatabase stageDB;
 
     [Header("Scene")]
-    [SerializeField] private string gameplaySceneName = "Game Play";
-    [SerializeField] private string selectedStageKey = "SelectedStageIndex";
+    [SerializeField] private string gameplaySceneName = "Gameplay";
+
+    [Header("Save Key")]
+    [SerializeField] private string selectedStageKey = "SelectedStageId";
 
     public void EnterSelectedStage()
     {
-        if (stageSlider == null)
+        if (stageSlider == null || stageDB == null)
         {
-            Debug.LogError("[StageEnterButton] stageSlider is NULL");
+            Debug.LogError("[StageEnterButton] stageSlider / stageDB reference missing.");
             return;
         }
 
-        int index = stageSlider.CurrentIndex; // 0-based
-        PlayerPrefs.SetInt(selectedStageKey, index);
+        // 슬라이드 중 클릭 진입 방지
+        if (stageSlider.IsMoving) return;
+
+        // StageSlider는 0-based index이지만, 실제 저장/진입은 stageID(1-based)로 통일
+        int stageId = stageSlider.GetSelectedStageId();
+        StageData stage = stageDB.GetStageById(stageId);
+
+        if (stage == null)
+        {
+            Debug.LogError($"[StageEnterButton] StageData not found for stageId={stageId} (index={stageSlider.CurrentIndex})");
+            return;
+        }
+
+        PlayerPrefs.SetInt(selectedStageKey, stage.stageID);
         PlayerPrefs.Save();
 
-        Debug.Log($"[StageEnterButton] Enter -> index={index}, scene={gameplaySceneName}");
-        var all = FindObjectsOfType<AudioSource>(true);
-        for (int i = 0; i < all.Length; i++)
-        {
-            var src = all[i];
-            if (src == null) continue;
-            if (src.isPlaying && src.loop)
-                src.Stop();
-        }
         SceneManager.LoadScene(gameplaySceneName);
     }
+
 }

@@ -1,99 +1,33 @@
-using System.Text;
 using TMPro;
 using UnityEngine;
 
 public class StageInfoUI : MonoBehaviour
 {
-    [Header("Wiring")]
-    [SerializeField] private StageSlider stageSlider;
+    [Header("DB")]
     [SerializeField] private StageDatabase stageDB;
 
     [Header("UI")]
-    [SerializeField] private TMP_Text stageNumberText;     // 상단 배너
-    [SerializeField] private TMP_Text stageDescText;       // 하단 설명 박스
+    [SerializeField] private TMP_Text stageNumberText;      // 예: "STAGE 1"
+    [SerializeField] private TMP_Text stageDescriptionText; // 하단 설명
 
-    private void OnEnable()
+    public void SetStage(StageData stage)
     {
-        if (stageSlider != null)
-            stageSlider.OnIndexChanged += HandleIndexChanged;
-
-        Refresh();
-    }
-
-    private void OnDisable()
-    {
-        if (stageSlider != null)
-            stageSlider.OnIndexChanged -= HandleIndexChanged;
-    }
-
-    private void HandleIndexChanged(int newIndex) => Refresh();
-
-    public void Refresh()
-    {
-        if (stageSlider == null) return;
-
-        int index = stageSlider.CurrentIndex;
-
-        // stageId 결정(우선: stageDB, fallback: slider mapping)
-        int stageId = stageSlider.GetSelectedStageId();
-        StageData data = null;
-
-        if (stageDB != null && stageDB.stages != null && index >= 0 && index < stageDB.stages.Length)
-        {
-            data = stageDB.stages[index];
-            stageId = data.stageID;
-        }
+        if (stage == null) return;
 
         if (stageNumberText != null)
-            stageNumberText.text = $"STAGE {stageId}";
+            stageNumberText.text = $"STAGE {stage.stageID}";
 
-        if (stageDescText != null)
-            stageDescText.text = (data != null) ? BuildDesc(data) : "스테이지 데이터가 연결되지 않았습니다.";
+        if (stageDescriptionText != null)
+            stageDescriptionText.text = stage.stageDescription ?? "";
     }
 
-    private string BuildDesc(StageData s)
+    public void SetStageByIndex(int index)
     {
-        var sb = new StringBuilder();
+        if (stageDB == null) return;
 
-        // 목표
-        if (s.useCollectGoal && s.collectTargets != null && s.collectTargets.Length > 0)
-        {
-            sb.Append("목표: ");
-            for (int i = 0; i < s.collectTargets.Length; i++)
-            {
-                var t = s.collectTargets[i];
-                sb.Append($"Gem {t.gemType} x{t.target}");
-                if (i < s.collectTargets.Length - 1) sb.Append(", ");
-            }
-            sb.AppendLine();
-
-            if (s.requirePassScore)
-                sb.AppendLine($"추가: 점수 {s.targetScore}");
-        }
-        else
-        {
-            sb.AppendLine($"목표 점수: {s.targetScore}");
-        }
-
-        sb.AppendLine($"이동 횟수: {s.maxMoves}");
-
-        // 장애물
-        if (s.useObstacles)
-        {
-            int iceCount = 0;
-            if (s.iceCage != null)
-            {
-                for (int i = 0; i < s.iceCage.Length; i++)
-                    if (s.iceCage[i] != 0) iceCount++;
-            }
-            else
-            {
-                iceCount = s.obstacleCount;
-            }
-
-            sb.AppendLine($"장애물: ICE ({iceCount})");
-        }
-
-        return sb.ToString().TrimEnd();
+        // index(0-based)로 stage를 얻되, 내부 표시는 stageID 사용
+        StageData stage = stageDB.GetStageByIndex(index);
+        SetStage(stage);
     }
+
 }

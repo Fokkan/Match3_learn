@@ -1056,6 +1056,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stageSlider: {fileID: 1342917311}
+  stageDB: {fileID: 11400000, guid: a32377123c116844389102e96a4d23d2, type: 2}
   gameplaySceneName: Game Play
   selectedStageKey: SelectedStageIndex
 --- !u!1 &818731481
@@ -1737,18 +1738,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8312e42f69437ee4e815b106dcb370f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  carts:
-  - {fileID: 121594834}
-  - {fileID: 1453608655}
-  - {fileID: 671234299}
-  - {fileID: 2046153426}
-  - {fileID: 1268993335}
-  - {fileID: 545679106}
-  moveSoundClip: {fileID: 8300000, guid: 70d2db7085cdd94449872f19c2dc0da6, type: 3}
-  duration: 0.5
-  posY: 150
-  offScreenPos: 1000
-  stageIds: 
+  cartContainer: {fileID: 1342917310}
+  slideOffsetX: 1000
+  slideDuration: 0.25
+  nextSlidesToRight: 1
+  minIndex: 0
+  maxIndex: 5
+  moveSfx: {fileID: 0}
 --- !u!82 &1433883077 stripped
 AudioSource:
   m_CorrespondingSourceObject: {fileID: 6674851864231399094, guid: 124e1b4ea3bcb25458372dd4197783db, type: 3}
@@ -2164,6 +2160,7 @@ GameObject:
   - component: {fileID: 2018031974}
   - component: {fileID: 2018031973}
   - component: {fileID: 2018031972}
+  - component: {fileID: 2018031975}
   m_Layer: 5
   m_Name: StageNumberText
   m_TagString: Untagged
@@ -2307,6 +2304,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2018031970}
   m_CullTransparentMesh: 1
+--- !u!114 &2018031975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2018031970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1de75dbdbce16ed45ac84e8f019106f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stageDB: {fileID: 11400000, guid: a32377123c116844389102e96a4d23d2, type: 2}
+  stageNumberText: {fileID: 2018031973}
+  stageDescriptionText: {fileID: 0}
 --- !u!1 &2046153425
 GameObject:
   m_ObjectHideFlags: 0
@@ -2441,8 +2453,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: New Text
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: a9d4c1ee2d61c1e4ea81a46e40adc378, type: 2}
+  m_sharedMaterial: {fileID: 7019337118453532767, guid: a9d4c1ee2d61c1e4ea81a46e40adc378, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

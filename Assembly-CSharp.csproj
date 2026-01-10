@@ -76,6 +76,7 @@
     <Compile Include="Assets\Scripts\StageInfoUI.cs" />
     <Compile Include="Assets\Scripts\CartHitButton.cs" />
     <Compile Include="Assets\Scripts\GamePlayStageBootstrap.cs" />
+    <Compile Include="Assets\Scripts\StageSelectUIBinder.cs" />
     <Compile Include="Assets\Scripts\ReturnButtonHandler.cs" />
     <Compile Include="Assets\Scripts\SimpleVolume.cs" />
     <Compile Include="Assets\Scripts\Gem.cs" />

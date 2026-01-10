@@ -667,37 +667,50 @@ public class BoardManager : MonoBehaviour
         public bool avoid2x2;
         public int maxClusterSize;   // 연결 덩어리 최대
     }
+    [System.Serializable]
+    private struct IcePlacementRules
+    {
+        public bool avoidTopRow;
+        public bool avoidBottomRow;
+        public bool avoidLeftCol;
+        public bool avoidRightCol;
+        public bool avoidSpawns;     // 현재 프로젝트에서는 TopRow 회피와 동일 취급
+        public bool avoidLocked;     // (현재 BoardManager에 locked 개념이 없으면 필터링은 생략 가능)
+        public bool avoidObstacles;  // 이미 obstacles[x,y] != None이면 후보에서 제외됨(안전망)
+
+        public bool avoid2x2;        // 기존 기능 유지
+    }
 
     /// <summary>
     /// StageData에 정의된 iceCage / obstacleCount / obstacleLevel로 ICE를 배치한다.
     /// 우선순위: iceCage(고정) > obstacleCount(랜덤)
     /// </summary>
+
     private void ApplyIceFromStageData(StageData s)
     {
         // ICE 시스템이 없는 빌드/씬에서도 크래시 나지 않게 방어
         if (s == null) return;
 
-        if (obstacles == null || iceObjects == null || iceHp == null) InitIceArrays();
-
-        // StageData에서 방해요소 사용 안 하면 스킵
-        if (!s.useObstacles) return;  //
-
-        // (1) 고정 배치 마스크 우선
-        if (s.iceCage != null && s.iceCage.Length == width * height) //
+        // (1) 수동 배치 마스크가 있으면 우선 적용 (TopLeftOrigin 기준)
+        // StageData.cs에서 iceCage는 int[] 입니다. (0=없음, 1=얼음 등)
+        if (s.iceCage != null && s.iceCage.Length == width * height)
         {
             ApplyIceCageMask_TopLeftOrigin(s.iceCage);
             return;
         }
 
         // (2) 랜덤 배치(개수 기반)
-        if (s.obstacleCount <= 0) return; //
+        if (s.obstacleCount <= 0) return;
 
-        IceClusterRules rules = GetIceRulesFromLevel(s.obstacleLevel); //
+        // 네 프로젝트 기준 ICE 규칙 타입은 IceClusterRules가 정식입니다.
+        IceClusterRules rules = GetIceRulesFromLevel(s.obstacleLevel);
 
         // 결정적 랜덤(같은 스테이지면 같은 배치) 권장: seed에 stageID 활용
-        int seed = s.stageID * 1000 + 12345; //
+        int seed = s.stageID * 1000 + 12345;
         PlaceRandomIceWithRules(s.obstacleCount, seed, rules);
     }
+
+
     private void ApplyGoalFromStageData(StageData s)
     {
         // 기본값: 인스펙터 설정 유지(디버그/단독 실행 대비)
@@ -708,7 +721,7 @@ public class BoardManager : MonoBehaviour
         if (s == null) return;
 
         // 스테이지에서 Collect 목표를 쓰지 않으면 기존 goalType 유지
-        if (!s.useCollectGoal || s.collectTargets == null || s.collectTargets.Length == 0)
+        if (!s.useCollectGoal || s.collectTargets == null || s.collectTargets.Count == 0)
             return;
 
         // 스테이지 단위로 requirePassScore를 오버라이드
@@ -718,7 +731,7 @@ public class BoardManager : MonoBehaviour
         List<int> types = new List<int>(4);
         List<int> targets = new List<int>(4);
 
-        for (int i = 0; i < s.collectTargets.Length; i++)
+        for (int i = 0; i < s.collectTargets.Count; i++)
         {
             int t = s.collectTargets[i].gemType;
             int goal = s.collectTargets[i].target;
@@ -887,6 +900,7 @@ public class BoardManager : MonoBehaviour
                 placed++;
             }
         }
+
     }
 
     /// <summary>
@@ -4600,7 +4614,8 @@ public class BoardManager : MonoBehaviour
         // ICE 개수 재계산 + GoalType 적용(ICE 스테이지면 AND로 자동 전환)
         RecountTotalIce();
         ApplyGoalFromStageData(StageManager.Instance != null ? StageManager.Instance.CurrentStage : null);
-        Debug.Log($"[Stage] id={StageManager.Instance?.CurrentStage?.stageID} useCollect={StageManager.Instance?.CurrentStage?.useCollectGoal} targets={StageManager.Instance?.CurrentStage?.collectTargets?.Length} totalIce={totalIce} goalType={levelGoalType}");
+        Debug.Log($"[Stage] id={StageManager.Instance?.CurrentStage?.stageID} useCollect={StageManager.Instance?.CurrentStage?.useCollectGoal} targets={(StageManager.Instance?.CurrentStage?.collectTargets == null ? 0 : StageManager.Instance.CurrentStage.collectTargets.Count)} totalIce={totalIce} goalType={levelGoalType}");
+
 
         // 런타임 진행도 리셋 + UI 갱신
         ResetGoalProgress();
