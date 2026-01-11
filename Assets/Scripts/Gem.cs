@@ -379,5 +379,7 @@ public class Gem : MonoBehaviour
 
         baseColor.a = 1f;
         sr.color = baseColor;
+        if (originalScale == Vector3.zero) originalScale = transform.localScale;
+        transform.localScale = originalScale;
     }
 }

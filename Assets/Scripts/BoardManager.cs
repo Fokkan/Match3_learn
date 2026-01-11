@@ -1,10 +1,13 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using TMPro;
 using DG.Tweening;
+using TMPro;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
+
 
 
 public class BoardManager : MonoBehaviour
@@ -74,6 +77,376 @@ public class BoardManager : MonoBehaviour
     public int targetScore = 500;
     public int defaultMaxMoves = 20;
 
+    public enum LevelGoalType
+    {
+        ScoreOnly,
+        ClearAllIce,
+        CollectColor,
+        CollectMultiColor,                 
+        ClearAllIceAndCollectMultiColor,
+        ScoreAndClearAllIce,
+        ScoreAndCollectColor
+    }
+
+
+    [Header("Goal Stars Options")]
+    [SerializeField] private bool hideStarsUntilReached = true;
+
+    [SerializeField] private float starPopDuration = 0.22f;
+    [SerializeField] private float starPopScale = 1.15f;
+
+    [SerializeField] private AudioClip starReachedClip;
+
+    [Header("Stage Clear Bonus (Move -> Random Explosions)")]
+    [SerializeField] private bool enableStageClearMoveBonus = true;
+    [SerializeField] private float stageClearBonusStepDelay = 0.06f;
+    [SerializeField, Range(0, 100)] private int stageClearBonusMakeSpecialChance = 70;
+    [SerializeField] private bool stageClearBonusAllowWrapped = true;
+    [SerializeField] private bool stageClearBonusAlsoDetonateRemainingSpecials = true;
+
+    // 레벨 클리어 후 보너스 연출에서는 ICE까지 무시하고 터뜨릴지(원하면 true)
+    [SerializeField] private bool stageClearBonusIgnoreIceForDetonation = false;
+
+    // 마지막 클리어에서 "보너스 연출로 추가된 점수" 표시용
+    private int lastClearBonusScore = 0;
+
+    public enum InGameBoosterType
+    {
+        None,
+        Blast3x3,
+        CrossRowCol,
+        FreeSwitch,
+        RandomSpecial5
+    }
+
+    [Header("In-Game Boosters (Bottom HUD)")]
+    [SerializeField] private bool enableBoosters = true;
+
+    // 부스터별 Move 소모 여부(캔디크러시 감성 기본값: false)
+    [SerializeField] private bool booster1ConsumesMove = false; // 3x3
+    [SerializeField] private bool booster2ConsumesMove = false; // 십자
+    [SerializeField] private bool booster3ConsumesMove = false; // 맘대로 바꾸기
+    [SerializeField] private bool booster4ConsumesMove = false; // 랜덤 특수 변환
+
+    // UI Hook
+    [SerializeField] private Button booster1Button;
+    [SerializeField] private TMP_Text booster1CountText;
+    [SerializeField] private GameObject booster1SelectedMark;
+    [SerializeField] private int booster1StartCount = 3;
+
+    [SerializeField] private Button booster2Button;
+    [SerializeField] private TMP_Text booster2CountText;
+    [SerializeField] private GameObject booster2SelectedMark;
+    [SerializeField] private int booster2StartCount = 3;
+
+    [SerializeField] private Button booster3Button;
+    [SerializeField] private TMP_Text booster3CountText;
+    [SerializeField] private GameObject booster3SelectedMark;
+    [SerializeField] private int booster3StartCount = 2;
+
+    [SerializeField] private Button booster4Button;
+    [SerializeField] private TMP_Text booster4CountText;
+    [SerializeField] private int booster4StartCount = 1;
+    [SerializeField] private GameObject booster4SelectedMark;
+
+    [Header("Booster Selection FX")]
+    [SerializeField] private float boosterSelectedPulseScale = 1.08f;
+    [SerializeField] private float boosterSelectedPulseDuration = 0.35f;
+    [SerializeField] private Ease boosterSelectedPulseEase = Ease.InOutSine;
+    [Header("Booster 4 Convert FX")]
+    [SerializeField] private float booster4PrePunch = 0.18f;
+    [SerializeField] private float booster4PrePunchDuration = 0.18f;
+    [SerializeField] private float booster4PostPopScale = 1.12f;
+    [SerializeField] private float booster4PostPopDuration = 0.10f;
+    [SerializeField] private float booster4StaggerDelay = 0.06f;   // 변환 사이 템포(순차)
+    [SerializeField] private float booster4VanishScale = 0.85f;    // 사라지기(축소) 비율
+    [SerializeField] private float booster4VanishDuration = 0.10f; // 축소 시간
+
+
+    // 부스터4 변환 옵션
+    [SerializeField] private bool booster4AllowWrapped = true;
+    [SerializeField] private bool booster4AllowColorBomb = false;
+
+    [SerializeField] private AudioClip boosterSelectClip;
+    [SerializeField] private AudioClip boosterUseClip;
+
+    [Header("Booster SelectedMark FX")]
+    [SerializeField] private float boosterMarkPulseScale = 1.08f;
+    [SerializeField] private float boosterMarkPulseDuration = 0.35f;
+    [SerializeField] private float boosterMarkAlphaMin = 0.55f;
+
+
+    [Header("Booster Target Mark")]
+    [SerializeField] private GameObject boosterTargetMarkPrefab; // 링/하이라이트 프리팹
+    [SerializeField] private int boosterTargetSortingOrderOffset = 20;
+    [SerializeField] private float boosterTargetPulseScale = 1.08f;
+    [SerializeField] private float boosterTargetPulseDuration = 0.25f;
+    [SerializeField] private float boosterTargetAlphaMin = 0.55f;
+
+    [SerializeField] private float boosterTargetConfirmScale = 1.22f;
+    [SerializeField] private float boosterTargetConfirmDuration = 0.10f;
+
+    [SerializeField] private float boosterSwapPunchScale = 0.10f;   // 젬이 ‘툭’ 하는 정도
+    [SerializeField] private float boosterSwapPunchDuration = 0.12f;
+
+
+    [Header("Level Goal")]
+    public LevelGoalType levelGoalType = LevelGoalType.ScoreOnly;
+
+    // 캔디크러시처럼 “Objective + 최소 점수(1-star)” 느낌을 원하면 true
+    public bool requirePassScore = true;
+
+    // CollectColor용 (gemSprites index 기반)
+    public int collectGemType = 0;
+    public int collectTarget = 20;
+    private int[] collectGemTypesMulti = null;
+    private int[] collectTargetsMulti = null;
+    private int[] collectedMulti = null;
+
+    // Goal UI에서 진행도 갱신을 받을 수 있도록 이벤트 제공
+    public event Action OnGoalProgressChanged;
+
+    private void NotifyGoalProgressChanged()
+    {
+        OnGoalProgressChanged?.Invoke();
+    }
+
+    // Collect(단일/멀티) 목표 데이터를 UI가 읽을 수 있게 제공
+    // - 단일 CollectColor도 멀티 형태(길이 1 배열)로 반환
+    public bool TryGetCollectGoalData(out int[] gemTypes, out int[] targets, out int[] collected)
+    {
+        gemTypes = null;
+        targets = null;
+        collected = null;
+
+        // 단일 Collect
+        if (levelGoalType == LevelGoalType.CollectColor || levelGoalType == LevelGoalType.ScoreAndCollectColor)
+        {
+            gemTypes = new[] { collectGemType };
+            targets = new[] { collectTarget };
+            collected = new[] { collectedCount };
+            return true;
+        }
+
+        // 멀티 Collect
+        if (levelGoalType == LevelGoalType.CollectMultiColor || levelGoalType == LevelGoalType.ClearAllIceAndCollectMultiColor)
+        {
+            if (collectGemTypesMulti == null || collectTargetsMulti == null || collectedMulti == null) return false;
+
+            gemTypes = (int[])collectGemTypesMulti.Clone();
+            targets = (int[])collectTargetsMulti.Clone();
+            collected = (int[])collectedMulti.Clone();
+            return true;
+        }
+
+        return false;
+    }
+
+    // ICE 남은 개수
+    public int GetIceRemaining()
+    {
+        return Mathf.Max(0, totalIce - clearedIce);
+    }
+
+    public int GetTotalIce()
+    {
+        return totalIce;
+    }
+
+
+    // 런타임 진행도
+    private int collectedCount = 0;
+    private int totalIce = 0;
+    private int clearedIce = 0;
+
+    private void ResetGoalProgress()
+    {
+        collectedCount = 0;
+        clearedIce = 0;
+
+        if (collectedMulti != null)
+        {
+            Array.Clear(collectedMulti, 0, collectedMulti.Length);
+        }
+        NotifyGoalProgressChanged();
+    }
+
+
+    private void RecountTotalIce()
+    {
+        totalIce = 0;
+        if (obstacles == null) return;
+
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+                if (obstacles[x, y] == ObstacleType.Ice) totalIce++;
+    }
+
+    private bool IsStageCleared()
+    {
+        switch (levelGoalType)
+        {
+            // 점수만 보는 스테이지
+            case LevelGoalType.ScoreOnly:
+                return score >= passScore;
+
+            // 얼음만 깨면 클리어 (옵션으로 최소 점수도 요구 가능)
+            case LevelGoalType.ClearAllIce:
+                if (requirePassScore && score < passScore) return false;
+                return clearedIce >= totalIce;
+
+            // Collect 단일
+            case LevelGoalType.CollectColor:
+                return collectedCount >= collectTarget;
+
+            // Collect 멀티(2~4색)
+            case LevelGoalType.CollectMultiColor:
+                {
+                    if (collectTargetsMulti == null || collectedMulti == null) return false;
+                    for (int i = 0; i < collectTargetsMulti.Length; i++)
+                    {
+                        if (collectedMulti[i] < collectTargetsMulti[i]) return false;
+                    }
+                    return true;
+                }
+
+            // ICE + Collect 멀티
+            // 네 요구사항: “Collect만 달성하면 클리어”라면 ICE도 같이 달성해야 한다는 전제가 들어가므로,
+            // 이 타입은 ICE + Collect 둘 다 만족해야 true가 맞다.
+            case LevelGoalType.ClearAllIceAndCollectMultiColor:
+                {
+                    if (clearedIce < totalIce) return false;
+
+                    if (collectTargetsMulti == null || collectedMulti == null) return false;
+                    for (int i = 0; i < collectTargetsMulti.Length; i++)
+                    {
+                        if (collectedMulti[i] < collectTargetsMulti[i]) return false;
+                    }
+                    return true;
+                }
+
+            // 점수 + 얼음
+            case LevelGoalType.ScoreAndClearAllIce:
+                return (score >= passScore) && (clearedIce >= totalIce);
+
+            // 점수 + Collect 단일
+            case LevelGoalType.ScoreAndCollectColor:
+                return (score >= passScore) && (collectedCount >= collectTarget);
+
+            default:
+                // 안전장치: 기존처럼 최소 점수 요구 옵션이 켜져 있으면 막음
+                if (requirePassScore && score < passScore) return false;
+                return score >= passScore;
+        }
+    }
+
+
+    private float GetGoalProgress01()
+    {
+        float ScoreP() => (targetScore <= 0) ? 1f : Mathf.Clamp01((float)score / targetScore);
+        float IceP() => (totalIce <= 0) ? 1f : Mathf.Clamp01((float)clearedIce / totalIce);
+        float CollectP() => (collectTarget <= 0) ? 1f : Mathf.Clamp01((float)collectedCount / collectTarget);
+        float MultiCollectP()
+        {
+            if (collectTargetsMulti == null || collectedMulti == null) return 0f;
+            if (collectTargetsMulti.Length == 0) return 1f;
+
+            float p = 1f;
+            for (int i = 0; i < collectTargetsMulti.Length; i++)
+            {
+                int tgt = collectTargetsMulti[i];
+                float r = (tgt <= 0) ? 1f : Mathf.Clamp01((float)collectedMulti[i] / tgt);
+                p = Mathf.Min(p, r);
+            }
+            return p;
+        }
+
+
+        switch (levelGoalType)
+        {
+            case LevelGoalType.ScoreOnly: return ScoreP();
+            case LevelGoalType.ClearAllIce: return IceP();
+            case LevelGoalType.CollectColor: return CollectP();
+            case LevelGoalType.ScoreAndClearAllIce: return Mathf.Min(ScoreP(), IceP());
+            case LevelGoalType.ScoreAndCollectColor: return Mathf.Min(ScoreP(), CollectP());
+            case LevelGoalType.CollectMultiColor: return MultiCollectP();
+            case LevelGoalType.ClearAllIceAndCollectMultiColor: return Mathf.Min(IceP(), MultiCollectP());
+
+            default: return ScoreP();
+        }
+    }
+
+    private void UpdateGoalTextUI()
+    {
+        if (goalText == null) return;
+
+        switch (levelGoalType)
+        {
+            case LevelGoalType.ScoreOnly:
+                goalText.text = $"Goal: {targetScore}";
+                break;
+
+            case LevelGoalType.ClearAllIce:
+                goalText.text = $"Goal: Break Ice {clearedIce}/{totalIce}";
+                break;
+
+            case LevelGoalType.CollectColor:
+                goalText.text = $"Goal: Collect {collectedCount}/{collectTarget}";
+                break;
+
+            case LevelGoalType.ScoreAndClearAllIce:
+                goalText.text = $"Goal: Ice {clearedIce}/{totalIce}  Score {score}/{targetScore}";
+                break;
+
+            case LevelGoalType.ScoreAndCollectColor:
+                goalText.text = $"Goal: Collect {collectedCount}/{collectTarget}  Score {score}/{targetScore}";
+                break;
+            case LevelGoalType.CollectMultiColor:
+                {
+                    if (collectTargetsMulti == null || collectedMulti == null)
+                    {
+                        goalText.text = "Goal: Collect (Not Set)";
+                        break;
+                    }
+
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                    sb.Append("Goal: Collect ");
+                    for (int i = 0; i < collectTargetsMulti.Length; i++)
+                    {
+                        if (i > 0) sb.Append(" | ");
+                        sb.Append($"T{collectGemTypesMulti[i]} {collectedMulti[i]}/{collectTargetsMulti[i]}");
+                    }
+                    goalText.text = sb.ToString();
+                    break;
+                }
+
+            case LevelGoalType.ClearAllIceAndCollectMultiColor:
+                {
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                    sb.Append($"Goal: Ice {clearedIce}/{totalIce}  ");
+
+                    if (collectTargetsMulti == null || collectedMulti == null)
+                    {
+                        sb.Append("Collect (Not Set)");
+                    }
+                    else
+                    {
+                        sb.Append("Collect ");
+                        for (int i = 0; i < collectTargetsMulti.Length; i++)
+                        {
+                            if (i > 0) sb.Append(" | ");
+                            sb.Append($"T{collectGemTypesMulti[i]} {collectedMulti[i]}/{collectTargetsMulti[i]}");
+                        }
+                    }
+
+                    goalText.text = sb.ToString();
+                    break;
+                }
+
+        }
+    }
+
+
     [Header("Game Rule UI")]
     public TMP_Text goalText;
     public TMP_Text movesText;
@@ -81,24 +454,37 @@ public class BoardManager : MonoBehaviour
     public TMP_Text resultText;
 
     [Header("Goal Gauge UI")]
-    public Image goalFillImage;
-    public Image star1Image;
-    public Image star2Image;
-    public Image star3Image;
+    [SerializeField] private Image goalFillImage;
+    [SerializeField] private Image star1Image;
+    [SerializeField] private Image star2Image;
+    [SerializeField] private Image star3Image;
 
-    [Range(0f, 1f)] public float star1Percent = 0.33f;
-    [Range(0f, 1f)] public float star2Percent = 0.66f;
-    [Range(0f, 1f)] public float star3Percent = 1.00f;
+    [SerializeField, Range(0f, 1f)] private float star1Percent = 0.33f;
+    [SerializeField, Range(0f, 1f)] private float star2Percent = 0.66f;
+    [SerializeField, Range(0f, 1f)] private float star3Percent = 1.00f;
 
-    public bool hideStarsUntilReached = true;
-    public float starPopScale = 1.15f;
-    public float starPopDuration = 0.18f;
-    public AudioClip starReachedClip;
+    private bool star1Shown = false;
+    private bool star2Shown = false;
+    private bool star3Shown = false;
 
-    private bool star1Shown;
-    private bool star2Shown;
-    private bool star3Shown;
 
+    [Header("Star Thresholds")]
+    public float star2Multiplier = 1.3f;
+    public float star3Multiplier = 1.6f;
+    public float starOffAlpha = 0.25f;
+    
+
+    private int passScore;
+    private int star2Score;
+    private int star3Score;
+
+    // 네가 코드에서 이미 star1Unlocked 같은 이름을 쓰고 있다면 이 이름 그대로 둔다
+    private bool star1Unlocked;
+    private bool star2Unlocked;
+    private bool star3Unlocked;
+
+    // 네 코드가 PassScore(대문자)를 직접 참조한다면, 아래 프로퍼티로 호환 처리
+    private int PassScore => passScore;
 
     [Header("Result Buttons")]
     public Button retryButton;
@@ -188,6 +574,38 @@ public class BoardManager : MonoBehaviour
     private Gem hintGemA = null;
     private Gem hintGemB = null;
     private float lastRefillAnimTime = 0f;
+    // ===== In-Game Boosters Runtime =====
+    private InGameBoosterType activeBooster = InGameBoosterType.None;
+
+    private int booster1Count;
+    private int booster2Count;
+    private int booster3Count;
+    private int booster4Count;
+    // Booster click targets (Boosters 1~2 use single target, Booster 3 uses two picks)
+    private Gem boosterTargetGem = null;
+    private Gem freeSwitchSecondPick = null;
+    private Gem boosterTargetPick = null; // Booster1/2: 1클릭 타겟(링)용
+
+
+    // SelectedMark pulse tweens
+    private Tween booster1MarkTween;
+    private Tween booster2MarkTween;
+    private Tween booster3MarkTween;
+    private Tween booster4MarkTween;
+
+    private Gem freeSwitchFirstPick = null;
+    // Booster target mark instances (A=주 타겟, B=FreeSwitch 두 번째 타겟)
+    private GameObject boosterTargetMarkA;
+    private GameObject boosterTargetMarkB;
+    private Tween boosterTargetTweenA;
+    private Tween boosterTargetTweenB;
+    // Booster 1/2: 타겟 2클릭 확정용(좌표 기반)
+    private bool booster12HasTarget = false;
+    private int booster12TargetX = -1;
+    private int booster12TargetY = -1;
+
+
+
 
     [Header("Ice Break VFX")]
     public float iceBreakDuration = 0.18f;
@@ -249,37 +667,117 @@ public class BoardManager : MonoBehaviour
         public bool avoid2x2;
         public int maxClusterSize;   // 연결 덩어리 최대
     }
+    [System.Serializable]
+    private struct IcePlacementRules
+    {
+        public bool avoidTopRow;
+        public bool avoidBottomRow;
+        public bool avoidLeftCol;
+        public bool avoidRightCol;
+        public bool avoidSpawns;     // 현재 프로젝트에서는 TopRow 회피와 동일 취급
+        public bool avoidLocked;     // (현재 BoardManager에 locked 개념이 없으면 필터링은 생략 가능)
+        public bool avoidObstacles;  // 이미 obstacles[x,y] != None이면 후보에서 제외됨(안전망)
+
+        public bool avoid2x2;        // 기존 기능 유지
+    }
 
     /// <summary>
     /// StageData에 정의된 iceCage / obstacleCount / obstacleLevel로 ICE를 배치한다.
     /// 우선순위: iceCage(고정) > obstacleCount(랜덤)
     /// </summary>
+
     private void ApplyIceFromStageData(StageData s)
     {
         // ICE 시스템이 없는 빌드/씬에서도 크래시 나지 않게 방어
         if (s == null) return;
 
-        if (obstacles == null || iceObjects == null || iceHp == null) InitIceArrays();
-
-        // StageData에서 방해요소 사용 안 하면 스킵
-        if (!s.useObstacles) return;  //
-
-        // (1) 고정 배치 마스크 우선
-        if (s.iceCage != null && s.iceCage.Length == width * height) //
+        // (1) 수동 배치 마스크가 있으면 우선 적용 (TopLeftOrigin 기준)
+        // StageData.cs에서 iceCage는 int[] 입니다. (0=없음, 1=얼음 등)
+        if (s.iceCage != null && s.iceCage.Length == width * height)
         {
             ApplyIceCageMask_TopLeftOrigin(s.iceCage);
             return;
         }
 
         // (2) 랜덤 배치(개수 기반)
-        if (s.obstacleCount <= 0) return; //
+        if (s.obstacleCount <= 0) return;
 
-        IceClusterRules rules = GetIceRulesFromLevel(s.obstacleLevel); //
+        // 네 프로젝트 기준 ICE 규칙 타입은 IceClusterRules가 정식입니다.
+        IceClusterRules rules = GetIceRulesFromLevel(s.obstacleLevel);
 
         // 결정적 랜덤(같은 스테이지면 같은 배치) 권장: seed에 stageID 활용
-        int seed = s.stageID * 1000 + 12345; //
+        int seed = s.stageID * 1000 + 12345;
         PlaceRandomIceWithRules(s.obstacleCount, seed, rules);
     }
+
+
+    // BoardManager.cs
+    // 위치: private void ApplyGoalFromStageData(StageData s)  <-- 이 함수 전체를 교체
+    private void ApplyGoalFromStageData(StageData s)
+    {
+        // 기본값: 인스펙터 설정 유지(디버그/단독 실행 대비)
+        collectGemTypesMulti = null;
+        collectTargetsMulti = null;
+        collectedMulti = null;
+
+        if (s == null) return;
+
+        // 스테이지에서 Collect 목표를 쓰지 않으면 기존 goalType 유지
+        if (!s.useCollectGoal || s.collectTargets == null || s.collectTargets.Count == 0)
+            return;
+
+        // 스테이지 단위로 requirePassScore를 오버라이드
+        requirePassScore = s.requirePassScore;
+
+        // 핵심: 같은 gemType이 여러 번 들어오면 "제거"가 아니라 "합산"한다.
+        Dictionary<int, int> summed = new Dictionary<int, int>(8);
+        List<int> order = new List<int>(4); // 최초 등장 순서 유지(표시 순서 고정)
+
+        for (int i = 0; i < s.collectTargets.Count; i++)
+        {
+            int t = s.collectTargets[i].gemType;
+            int goal = s.collectTargets[i].target;
+
+            if (goal <= 0) continue;
+            if (t < 0) continue;
+            if (gemSprites != null && t >= gemSprites.Length) continue;
+
+            if (!summed.ContainsKey(t))
+            {
+                summed[t] = goal;
+                order.Add(t);
+            }
+            else
+            {
+                summed[t] += goal;
+            }
+        }
+
+        if (order.Count == 0) return;
+
+        int n = Mathf.Min(4, order.Count);
+
+        collectGemTypesMulti = new int[n];
+        collectTargetsMulti = new int[n];
+        collectedMulti = new int[n];
+
+        for (int i = 0; i < n; i++)
+        {
+            int t = order[i];
+            collectGemTypesMulti[i] = t;
+            collectTargetsMulti[i] = summed[t];
+        }
+
+        // 블로커(ICE) 스테이지면: ICE AND Collect
+        // totalIce는 RecountTotalIce() 이후 값이므로, ApplyGoalFromStageData는 Recount 이후에 호출되어야 함.
+        if (totalIce > 0)
+            levelGoalType = LevelGoalType.ClearAllIceAndCollectMultiColor;
+        else
+            levelGoalType = LevelGoalType.CollectMultiColor;
+    }
+
+
+
 
     private void AlignBoardToMiddleArea()
     {
@@ -418,6 +916,7 @@ public class BoardManager : MonoBehaviour
                 placed++;
             }
         }
+
     }
 
     /// <summary>
@@ -465,7 +964,10 @@ public class BoardManager : MonoBehaviour
             InitIceArrays();
             GenerateBoard();
             ApplyIceFromStageData(StageManager.Instance != null ? StageManager.Instance.CurrentStage : null);
-
+            RecountTotalIce();
+            ResetGoalProgress();
+            UpdateGoalTextUI();
+            UpdateGoalGaugeUI();
 
 
             ApplyIceForStage(GetStageNumberSafe());
@@ -636,7 +1138,33 @@ public class BoardManager : MonoBehaviour
 
         gems = null;
     }
+    private void UpdateGoalProgressUI()
+    {
+        if (targetScore <= 0) return;
 
+        float p = Mathf.Clamp01((float)score / targetScore);
+
+        if (goalFillImage != null)
+            goalFillImage.fillAmount = p;
+
+        TryShowStar(ref star1Shown, star1Image, p >= star1Percent);
+        TryShowStar(ref star2Shown, star2Image, p >= star2Percent);
+        TryShowStar(ref star3Shown, star3Image, p >= star3Percent);
+    }
+
+    private void TryShowStar(ref bool alreadyShown, Image starImg, bool shouldShow)
+    {
+        if (starImg == null) return;
+
+        if (!shouldShow) return;
+
+        if (alreadyShown) return;
+
+        alreadyShown = true;
+        starImg.gameObject.SetActive(true);
+
+        // 연출은 일단 단순 활성화만. 원하면 여기서 DOScale 팝 연출 추가 가능.
+    }
     private int GetRandomTypeForInitial(int x, int y)
     {
         int typeCount = (gemSprites != null && gemSprites.Length > 0) ? gemSprites.Length : 5;
@@ -875,12 +1403,78 @@ public class BoardManager : MonoBehaviour
 
     private void UpdateGoalUI()
     {
-        if (goalText != null)
-            goalText.text = $"Goal: {targetScore}";
+        if (goalFillImage == null) return;
+        if (targetScore <= 0) return;
 
-        ResetGoalGaugeUI();
-        UpdateGoalGaugeUI();
+        float t = Mathf.Clamp01((float)score / targetScore);
+        goalFillImage.fillAmount = t;
+
+        TryShowStar(t, star1Percent, ref star1Shown, star1Image);
+        TryShowStar(t, star2Percent, ref star2Shown, star2Image);
+        TryShowStar(t, star3Percent, ref star3Shown, star3Image);
     }
+
+    private void TryShowStar(float t, float percent, ref bool shownFlag, Image starImg)
+    {
+        if (starImg == null) return;
+
+        if (hideStarsUntilReached)
+        {
+            if (!shownFlag) starImg.gameObject.SetActive(false);
+        }
+        else
+        {
+            starImg.gameObject.SetActive(true);
+        }
+
+        if (shownFlag) return;
+        if (t + 0.0001f < percent) return;
+
+        shownFlag = true;
+        starImg.gameObject.SetActive(true);
+
+        starImg.transform.DOKill();
+        starImg.transform.localScale = Vector3.one;
+        starImg.transform
+            .DOScale(Vector3.one * starPopScale, starPopDuration * 0.5f)
+            .SetEase(Ease.OutBack)
+            .OnComplete(() =>
+            {
+                starImg.transform.DOScale(Vector3.one, starPopDuration * 0.5f).SetEase(Ease.OutQuad);
+            });
+
+        if (starReachedClip != null) PlaySfx(starReachedClip);
+    }
+
+
+    private void SetupStarThresholds()
+    {
+        passScore = Mathf.Max(1, targetScore);
+        star2Score = Mathf.Max(passScore, Mathf.CeilToInt(passScore * star2Multiplier));
+        star3Score = Mathf.Max(star2Score, Mathf.CeilToInt(passScore * star3Multiplier));
+
+        star1Unlocked = false;
+        star2Unlocked = false;
+        star3Unlocked = false;
+
+        ApplyStarVisual(star1Image, false);
+        ApplyStarVisual(star2Image, false);
+        ApplyStarVisual(star3Image, false);
+
+        if (goalFillImage != null)
+            goalFillImage.fillAmount = 0f;
+    }
+
+    private void ApplyStarVisual(Image img, bool on)
+    {
+        if (img == null) return;
+
+        var c = img.color;
+        c.a = on ? 1f : starOffAlpha;
+        img.color = c;
+    }
+
+    
 
 
     private void UpdateMovesUI()
@@ -907,6 +1501,7 @@ public class BoardManager : MonoBehaviour
 
     private void UpdateGoalGaugeUI()
     {
+        // 점수 기반 진행도(= Goal 게이지)
         if (targetScore <= 0)
         {
             if (goalFillImage != null) goalFillImage.fillAmount = 0f;
@@ -923,6 +1518,8 @@ public class BoardManager : MonoBehaviour
         HandleStarReached(star3Image, star3Percent, ref star3Shown, p);
     }
 
+
+
     private void HandleStarReached(Image star, float threshold, ref bool shown, float progress)
     {
         if (star == null) return;
@@ -935,6 +1532,8 @@ public class BoardManager : MonoBehaviour
 
         if (hideStarsUntilReached)
             star.gameObject.SetActive(true);
+
+        ApplyStarVisual(star, true);
 
         PopStar(star);
 
@@ -970,6 +1569,13 @@ public class BoardManager : MonoBehaviour
         if (isShuffling) return;
         if (isAnimating) return;
         if (gem == null) return;
+        // 부스터 모드가 켜져 있으면, 일반 선택/스왑 대신 부스터 처리
+        if (enableBoosters && activeBooster != InGameBoosterType.None)
+        {
+            HandleBoosterClick(gem);
+            return;
+        }
+
         // ICE 칸은 클릭(선택) 자체를 막음
         if (IsIce(gem.x, gem.y))
         {
@@ -1010,6 +1616,1017 @@ public class BoardManager : MonoBehaviour
                 selectedGem.SetSelected(true);
             }
         }
+
+    }
+    // ===== Boosters: UI OnClick =====
+    public void OnClickBooster1_Blast3x3() => ToggleBooster(InGameBoosterType.Blast3x3);
+    public void OnClickBooster2_CrossRowCol() => ToggleBooster(InGameBoosterType.CrossRowCol);
+    public void OnClickBooster3_FreeSwitch() => ToggleBooster(InGameBoosterType.FreeSwitch);
+
+    public void OnClickBooster4_RandomSpecial5()
+    {
+        if (!enableBoosters) return;
+        if (isGameOver || isShuffling || isAnimating) return;
+        if (booster4Count <= 0) return;
+
+        StartCoroutine(UseBooster4_RandomSpecial5Routine());
+    }
+
+    // ===== Boosters: Init/State =====
+    [SerializeField] private bool autoBindBoosterButtons = true;
+    private void InitBoostersForStage()
+    {
+        booster1Count = Mathf.Max(0, booster1StartCount);
+        booster2Count = Mathf.Max(0, booster2StartCount);
+        booster3Count = Mathf.Max(0, booster3StartCount);
+        booster4Count = Mathf.Max(0, booster4StartCount);
+
+        BindBoosterButtonsIfNeeded();
+        ClearBoosterMode();
+        UpdateBoosterUI();
+    }
+    private void BindBoosterButtonsIfNeeded()
+    {
+        if (!autoBindBoosterButtons) return;
+
+        BindIfNoPersistent(booster1Button, OnClickBooster1_Blast3x3);
+        BindIfNoPersistent(booster2Button, OnClickBooster2_CrossRowCol);
+        BindIfNoPersistent(booster3Button, OnClickBooster3_FreeSwitch);
+        BindIfNoPersistent(booster4Button, OnClickBooster4_RandomSpecial5);
+    }
+
+    private void BindIfNoPersistent(Button btn, System.Action handler)
+    {
+        if (btn == null || handler == null) return;
+
+        // 인스펙터에 이미 연결(퍼시스턴트)이 있으면 건드리지 않음
+        if (btn.onClick.GetPersistentEventCount() > 0) return;
+
+        btn.onClick.RemoveAllListeners();
+        btn.onClick.AddListener(() => handler.Invoke());
+    }
+
+    private GameObject GetOrCreateBoosterTargetMark(ref GameObject inst)
+    {
+        if (boosterTargetMarkPrefab == null) return null;
+        if (inst == null) inst = Instantiate(boosterTargetMarkPrefab);
+        return inst;
+    }
+
+    private void HideBoosterTargetMark(ref GameObject inst, ref Tween tween)
+    {
+        if (tween != null && tween.IsActive()) tween.Kill();
+        tween = null;
+
+        if (inst != null)
+            inst.SetActive(false);
+    }
+
+    private void ShowBoosterTargetMarkOnGem(Gem gem, ref GameObject inst, ref Tween tween)
+    {
+        if (gem == null)
+        {
+            HideBoosterTargetMark(ref inst, ref tween);
+            return;
+        }
+
+        GameObject mark = GetOrCreateBoosterTargetMark(ref inst);
+        if (mark == null) return;
+
+        // 젬에 붙여서 같이 움직이게
+        mark.transform.SetParent(gem.transform, false);
+        mark.transform.localPosition = Vector3.zero;
+        mark.transform.localRotation = Quaternion.identity;
+        mark.transform.localScale = Vector3.one;
+        mark.SetActive(true);
+
+        // SortingOrder를 젬보다 위로 올림 (SpriteRenderer 방식)
+        SpriteRenderer gemSr = gem.GetComponent<SpriteRenderer>();
+        SpriteRenderer markSr = mark.GetComponent<SpriteRenderer>();
+        if (gemSr != null && markSr != null)
+        {
+            markSr.sortingLayerID = gemSr.sortingLayerID;
+            markSr.sortingOrder = gemSr.sortingOrder + boosterTargetSortingOrderOffset;
+        }
+
+        // 알파를 컨트롤할 대상 찾기 (SpriteRenderer 우선)
+        if (tween != null && tween.IsActive()) tween.Kill();
+        tween = null;
+
+        float d = Mathf.Max(0.05f, boosterTargetPulseDuration);
+
+        Sequence seq = DOTween.Sequence();
+
+        // 스케일 펄스
+        seq.Append(mark.transform.DOScale(boosterTargetPulseScale, d).SetEase(Ease.InOutSine));
+        seq.Append(mark.transform.DOScale(1f, d).SetEase(Ease.InOutSine));
+
+        // 알파 펄스(가능한 컴포넌트에만)
+        if (markSr != null)
+        {
+            seq.Insert(0f, markSr.DOFade(boosterTargetAlphaMin, d).SetEase(Ease.InOutSine));
+            seq.Insert(d, markSr.DOFade(1f, d).SetEase(Ease.InOutSine));
+        }
+        else
+        {
+            // 혹시 UI Image/CanvasGroup로 만들었을 경우 대응
+            var img = mark.GetComponent<UnityEngine.UI.Image>();
+            if (img != null)
+            {
+                seq.Insert(0f, img.DOFade(boosterTargetAlphaMin, d).SetEase(Ease.InOutSine));
+                seq.Insert(d, img.DOFade(1f, d).SetEase(Ease.InOutSine));
+            }
+            else
+            {
+                var cg = mark.GetComponent<CanvasGroup>();
+                if (cg != null)
+                {
+                    seq.Insert(0f, cg.DOFade(boosterTargetAlphaMin, d).SetEase(Ease.InOutSine));
+                    seq.Insert(d, cg.DOFade(1f, d).SetEase(Ease.InOutSine));
+                }
+            }
+        }
+
+        seq.SetLoops(-1, LoopType.Restart);
+        tween = seq;
+    }
+    private void ConfirmAndHideBoosterTargetMark(GameObject inst, ref Tween loopTween)
+    {
+        if (loopTween != null && loopTween.IsActive()) loopTween.Kill();
+        loopTween = null;
+
+        if (inst == null) return;
+
+        GameObject instLocal = inst; //  람다에서 ref 대신 로컬 참조만 사용
+
+        instLocal.SetActive(true);
+
+        float d = Mathf.Max(0.05f, boosterTargetConfirmDuration);
+
+        Transform t = instLocal.transform;
+        t.localScale = Vector3.one;
+
+        SpriteRenderer sr = instLocal.GetComponent<SpriteRenderer>();
+        var img = instLocal.GetComponent<UnityEngine.UI.Image>();
+        var cg = instLocal.GetComponent<CanvasGroup>();
+
+        // 알파 1로 리셋
+        if (sr != null) { var c = sr.color; c.a = 1f; sr.color = c; }
+        if (img != null) { var c = img.color; c.a = 1f; img.color = c; }
+        if (cg != null) cg.alpha = 1f;
+
+        Sequence seq = DOTween.Sequence();
+        seq.Append(t.DOScale(boosterTargetConfirmScale, d).SetEase(Ease.OutBack));
+
+        if (sr != null) seq.Join(sr.DOFade(0f, d).SetEase(Ease.OutSine));
+        else if (img != null) seq.Join(img.DOFade(0f, d).SetEase(Ease.OutSine));
+        else if (cg != null) seq.Join(cg.DOFade(0f, d).SetEase(Ease.OutSine));
+
+        seq.OnComplete(() =>
+        {
+            if (instLocal == null) return;
+
+            // 다음 표시를 위해 복구
+            if (sr != null) { var c = sr.color; c.a = 1f; sr.color = c; }
+            if (img != null) { var c = img.color; c.a = 1f; img.color = c; }
+            if (cg != null) cg.alpha = 1f;
+
+            instLocal.SetActive(false);
+            t.localScale = Vector3.one;
+        });
+
+        loopTween = seq;
+    }
+
+
+    private void ToggleBooster(InGameBoosterType t)
+    {
+        if (!enableBoosters) return;
+        if (isGameOver || isShuffling || isAnimating) return;
+
+        if (t == InGameBoosterType.Blast3x3 && booster1Count <= 0) return;
+        if (t == InGameBoosterType.CrossRowCol && booster2Count <= 0) return;
+        if (t == InGameBoosterType.FreeSwitch && booster3Count <= 0) return;
+
+        // 같은 부스터를 다시 누르면 "취소"
+        if (activeBooster == t)
+        {
+            ClearBoosterMode();
+            UpdateBoosterUI();
+            return;
+        }
+
+        // 다른 부스터 선택 = 모드 전환
+        ClearBoosterMode();
+        activeBooster = t;
+
+        // 일반 선택 제거
+        if (selectedGem != null)
+        {
+            selectedGem.SetSelected(false);
+            selectedGem = null;
+        }
+
+        ClearHint();
+        idleTimer = 0f;
+
+        if (boosterSelectClip != null) PlaySfx(boosterSelectClip);
+
+        UpdateBoosterUI();
+    }
+
+    private void SetSelectedMark(GameObject mark, ref Tween tween, bool on)
+    {
+        if (tween != null && tween.IsActive()) tween.Kill();
+        tween = null;
+
+        if (mark == null) return;
+
+        mark.SetActive(on);
+        if (!on) return;
+
+        Transform t = mark.transform;
+        t.localScale = Vector3.one;
+
+        // 알파 펄스 대상 찾기 (Image 우선, 없으면 CanvasGroup)
+        UnityEngine.UI.Image img = mark.GetComponent<UnityEngine.UI.Image>();
+        CanvasGroup cg = (img == null) ? mark.GetComponent<CanvasGroup>() : null;
+
+        // 초기 알파 1
+        if (img != null)
+        {
+            Color c = img.color; c.a = 1f; img.color = c;
+        }
+        else if (cg != null)
+        {
+            cg.alpha = 1f;
+        }
+
+        Sequence seq = DOTween.Sequence();
+
+        // 스케일 펄스
+        seq.Append(t.DOScale(boosterMarkPulseScale, boosterMarkPulseDuration).SetEase(Ease.InOutSine));
+        seq.Append(t.DOScale(1f, boosterMarkPulseDuration).SetEase(Ease.InOutSine));
+
+        // 알파 펄스
+        if (img != null)
+        {
+            seq.Insert(0f, img.DOFade(boosterMarkAlphaMin, boosterMarkPulseDuration).SetEase(Ease.InOutSine));
+            seq.Insert(boosterMarkPulseDuration, img.DOFade(1f, boosterMarkPulseDuration).SetEase(Ease.InOutSine));
+        }
+        else if (cg != null)
+        {
+            seq.Insert(0f, cg.DOFade(boosterMarkAlphaMin, boosterMarkPulseDuration).SetEase(Ease.InOutSine));
+            seq.Insert(boosterMarkPulseDuration, cg.DOFade(1f, boosterMarkPulseDuration).SetEase(Ease.InOutSine));
+        }
+
+        seq.SetLoops(-1, LoopType.Restart);
+        tween = seq;
+    }
+
+
+    private void ClearBoosterMode()
+    {
+        activeBooster = InGameBoosterType.None;
+
+        // FreeSwitch 픽 정리
+        if (freeSwitchFirstPick != null)
+        {
+            freeSwitchFirstPick.SetSelected(false);
+            freeSwitchFirstPick = null;
+        }
+
+        if (freeSwitchSecondPick != null)
+        {
+            freeSwitchSecondPick.SetSelected(false);
+            freeSwitchSecondPick = null;
+        }
+
+        // Booster1/2 타겟 정리
+        if (boosterTargetPick != null)
+        {
+            boosterTargetPick.SetSelected(false);
+            boosterTargetPick = null;
+        }
+
+        // 레거시/혼용 변수 안전 정리
+        boosterTargetGem = null;
+
+        // 타겟 링(프리팹) 정리
+        HideBoosterTargetMark(ref boosterTargetMarkA, ref boosterTargetTweenA);
+        HideBoosterTargetMark(ref boosterTargetMarkB, ref boosterTargetTweenB);
+
+        // 슬롯 선택 마크 정리
+        if (booster1SelectedMark != null) booster1SelectedMark.SetActive(false);
+        if (booster2SelectedMark != null) booster2SelectedMark.SetActive(false);
+        if (booster3SelectedMark != null) booster3SelectedMark.SetActive(false);
+
+        // Booster4는 즉시 사용형이라 여기서 다룰 필요 없음(마크는 UpdateBoosterUI에서 꺼짐)
+        if (booster1MarkTween != null && booster1MarkTween.IsActive()) booster1MarkTween.Kill();
+        if (booster2MarkTween != null && booster2MarkTween.IsActive()) booster2MarkTween.Kill();
+        if (booster3MarkTween != null && booster3MarkTween.IsActive()) booster3MarkTween.Kill();
+
+        booster1MarkTween = null;
+        booster2MarkTween = null;
+        booster3MarkTween = null;
+
+    }
+
+
+
+    private void SetSelectedMark(GameObject mark, bool on, ref Tween tween)
+    {
+        if (mark == null) return;
+
+        RectTransform rt = mark.GetComponent<RectTransform>();
+
+        if (!on)
+        {
+            if (tween != null && tween.IsActive()) tween.Kill();
+            tween = null;
+
+            if (rt != null) rt.localScale = Vector3.one;
+            mark.SetActive(false);
+            return;
+        }
+
+        mark.SetActive(true);
+
+        if (tween != null && tween.IsActive()) tween.Kill();
+        tween = null;
+
+        if (rt != null)
+        {
+            rt.localScale = Vector3.one;
+            tween = rt.DOScale(boosterSelectedPulseScale, boosterSelectedPulseDuration)
+                      .SetLoops(-1, LoopType.Yoyo)
+                      .SetEase(boosterSelectedPulseEase);
+        }
+    }
+
+    private void UpdateBoosterUI()
+    {
+        if (booster1CountText != null) booster1CountText.text = $"x{booster1Count}";
+        if (booster2CountText != null) booster2CountText.text = $"x{booster2Count}";
+        if (booster3CountText != null) booster3CountText.text = $"x{booster3Count}";
+        if (booster4CountText != null) booster4CountText.text = $"x{booster4Count}";
+
+        bool lockUI = isAnimating || isGameOver || isShuffling;
+
+        if (booster1Button != null) booster1Button.interactable = !lockUI && booster1Count > 0;
+        if (booster2Button != null) booster2Button.interactable = !lockUI && booster2Count > 0;
+        if (booster3Button != null) booster3Button.interactable = !lockUI && booster3Count > 0;
+        if (booster4Button != null) booster4Button.interactable = !lockUI && booster4Count > 0;
+
+        SetSelectedMark(booster1SelectedMark, activeBooster == InGameBoosterType.Blast3x3, ref booster1MarkTween);
+        SetSelectedMark(booster2SelectedMark, activeBooster == InGameBoosterType.CrossRowCol, ref booster2MarkTween);
+        SetSelectedMark(booster3SelectedMark, activeBooster == InGameBoosterType.FreeSwitch, ref booster3MarkTween);
+
+        // Booster4는 "모드"가 아니라 즉시 사용형이라 기본은 꺼둬도 됨.
+        // 원하면: 누르는 순간만 짧게 켜는 플래시 연출을 OnClickBooster4에서 처리(아래 3번에 포함).
+        SetSelectedMark(booster4SelectedMark, false, ref booster4MarkTween);
+        // 선택 마크(SelectedMark) - activeBooster만 펄스
+        SetSelectedMark(booster1SelectedMark, ref booster1MarkTween, activeBooster == InGameBoosterType.Blast3x3);
+        SetSelectedMark(booster2SelectedMark, ref booster2MarkTween, activeBooster == InGameBoosterType.CrossRowCol);
+        SetSelectedMark(booster3SelectedMark, ref booster3MarkTween, activeBooster == InGameBoosterType.FreeSwitch);
+        // booster4는 즉시형이면 선택 마크 유지 안 하는 편이 깔끔(원하면 여기서도 on 처리 가능)
+
+    }
+
+
+    // ===== Boosters: Click Handling =====
+    void HandleBoosterClick(Gem gem)
+    {
+        if (gem == null) return;
+        if (isGameOver || isShuffling || isAnimating) return;
+
+        ClearHint();
+        idleTimer = 0f;
+
+        // ICE 대상 제외(룰 유지)
+        if (IsIce(gem.x, gem.y)) return;
+
+        switch (activeBooster)
+        {
+            case InGameBoosterType.Blast3x3:
+                {
+                    if (booster1Count <= 0) { ClearBoosterMode(); UpdateBoosterUI(); return; }
+
+                    // 1클릭: 타겟 지정(링 표시)
+                    if (boosterTargetPick == null)
+                    {
+                        boosterTargetPick = gem;
+                        ShowBoosterTargetMarkOnGem(boosterTargetPick, ref boosterTargetMarkA, ref boosterTargetTweenA);
+                        HideBoosterTargetMark(ref boosterTargetMarkB, ref boosterTargetTweenB);
+                        return;
+                    }
+
+                    // 다른 젬 클릭: 타겟 변경(링 이동)
+                    if (boosterTargetPick != gem)
+                    {
+                        boosterTargetPick = gem;
+                        ShowBoosterTargetMarkOnGem(boosterTargetPick, ref boosterTargetMarkA, ref boosterTargetTweenA);
+                        return;
+                    }
+
+                    // 같은 젬 2클릭: 발동
+                    int bx = gem.x;
+                    int by = gem.y;
+
+                    boosterTargetPick = null;
+                    ConfirmAndHideBoosterTargetMark(boosterTargetMarkA, ref boosterTargetTweenA);
+
+                    StartCoroutine(UseBoosterMaskRoutine(Make3x3Mask(bx, by), InGameBoosterType.Blast3x3));
+                    return;
+                }
+
+            case InGameBoosterType.CrossRowCol:
+                {
+                    if (booster2Count <= 0) { ClearBoosterMode(); UpdateBoosterUI(); return; }
+
+                    // 1클릭: 타겟 지정(링 표시)
+                    if (boosterTargetPick == null)
+                    {
+                        boosterTargetPick = gem;
+                        ShowBoosterTargetMarkOnGem(boosterTargetPick, ref boosterTargetMarkA, ref boosterTargetTweenA);
+                        HideBoosterTargetMark(ref boosterTargetMarkB, ref boosterTargetTweenB);
+                        return;
+                    }
+
+                    // 다른 젬 클릭: 타겟 변경(링 이동)
+                    if (boosterTargetPick != gem)
+                    {
+                        boosterTargetPick = gem;
+                        ShowBoosterTargetMarkOnGem(boosterTargetPick, ref boosterTargetMarkA, ref boosterTargetTweenA);
+                        return;
+                    }
+
+                    // 같은 젬 2클릭: 발동
+                    int cx = gem.x;
+                    int cy = gem.y;
+
+                    boosterTargetPick = null;
+                    ConfirmAndHideBoosterTargetMark(boosterTargetMarkA, ref boosterTargetTweenA);
+
+                    StartCoroutine(UseBoosterMaskRoutine(MakeCrossRowColMask(cx, cy), InGameBoosterType.CrossRowCol));
+                    return;
+                }
+
+            case InGameBoosterType.FreeSwitch:
+                {
+                    if (booster3Count <= 0) { ClearBoosterMode(); UpdateBoosterUI(); return; }
+
+                    // 1픽: A젬 선택
+                    if (freeSwitchFirstPick == null)
+                    {
+                        freeSwitchFirstPick = gem;
+                        freeSwitchFirstPick.SetSelected(true);
+
+                        ShowBoosterTargetMarkOnGem(freeSwitchFirstPick, ref boosterTargetMarkA, ref boosterTargetTweenA);
+                        HideBoosterTargetMark(ref boosterTargetMarkB, ref boosterTargetTweenB);
+                        return;
+                    }
+
+                    // A젬을 다시 누르면 취소
+                    if (freeSwitchFirstPick == gem)
+                    {
+                        freeSwitchFirstPick.SetSelected(false);
+                        freeSwitchFirstPick = null;
+
+                        freeSwitchSecondPick = null;
+
+                        HideBoosterTargetMark(ref boosterTargetMarkA, ref boosterTargetTweenA);
+                        HideBoosterTargetMark(ref boosterTargetMarkB, ref boosterTargetTweenB);
+
+                        return;
+                    }
+
+                    // 2픽: B젬 선택 즉시 교환 발동
+                    freeSwitchSecondPick = gem;
+                    freeSwitchSecondPick.SetSelected(true);
+
+                    ShowBoosterTargetMarkOnGem(freeSwitchFirstPick, ref boosterTargetMarkA, ref boosterTargetTweenA);
+                    ShowBoosterTargetMarkOnGem(freeSwitchSecondPick, ref boosterTargetMarkB, ref boosterTargetTweenB);
+
+                    StartCoroutine(UseBooster3_FreeSwitchRoutine(freeSwitchFirstPick, freeSwitchSecondPick));
+                    return;
+                }
+        }
+    }
+
+
+
+    // ===== Boosters: Masks =====
+    private bool[,] Make3x3Mask(int cx, int cy)
+    {
+        bool[,] mask = new bool[width, height];
+
+        for (int dx = -1; dx <= 1; dx++)
+        {
+            int x = cx + dx;
+            if (x < 0 || x >= width) continue;
+
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                int y = cy + dy;
+                if (y < 0 || y >= height) continue;
+
+                mask[x, y] = true;
+            }
+        }
+
+        return mask;
+    }
+
+    private bool[,] MakeCrossRowColMask(int x, int y)
+    {
+        bool[,] mask = new bool[width, height];
+
+        if (y >= 0 && y < height)
+        {
+            for (int xx = 0; xx < width; xx++)
+                mask[xx, y] = true;
+        }
+
+        if (x >= 0 && x < width)
+        {
+            for (int yy = 0; yy < height; yy++)
+                mask[x, yy] = true;
+        }
+
+        return mask;
+    }
+
+    // ===== Boosters: Execution =====
+    private IEnumerator UseBoosterMaskRoutine(bool[,] mask, InGameBoosterType used)
+    {
+        if (isAnimating) yield break;
+        if (mask == null) yield break;
+
+        isAnimating = true;
+        BeginIceHitWindow();
+
+        if (selectedGem != null)
+        {
+            selectedGem.SetSelected(false);
+            selectedGem = null;
+        }
+
+        if (boosterUseClip != null) PlaySfx(boosterUseClip);
+
+        // 1) 클리어
+        int cleared = ClearByMaskWithChain(mask);
+        if (cleared > 0)
+            AddScoreForClear(cleared, comboMultiplier: 1);
+
+        // 2) 부스터 카운트 차감
+        if (used == InGameBoosterType.Blast3x3) booster1Count--;
+        if (used == InGameBoosterType.CrossRowCol) booster2Count--;
+
+        // 3) Move 소모(옵션)
+        if (used == InGameBoosterType.Blast3x3 && booster1ConsumesMove)
+        {
+            movesLeft--;
+            UpdateMovesUI();
+        }
+        if (used == InGameBoosterType.CrossRowCol && booster2ConsumesMove)
+        {
+            movesLeft--;
+            UpdateMovesUI();
+        }
+
+        UpdateBoosterUI();
+
+        // 4) 승/패 체크(승리 시 클리어 보너스 루틴 포함)
+        if (IsStageCleared())
+        {
+            yield return StartCoroutine(StageClearBonusRoutine());
+            isAnimating = false;
+            yield break;
+        }
+        if (movesLeft <= 0)
+        {
+            EndGame(false);
+            isAnimating = false;
+            yield break;
+        }
+
+        // 5) 리필 + 캐스케이드
+        if (cleared > 0)
+        {
+            yield return new WaitForSeconds(popDuration);
+            yield return StartCoroutine(PostClearRefillAndEnsure());
+
+            int combo = 0;
+            while (true)
+            {
+                int c = CheckMatchesAndClear_WithPromotionsSafe();
+                if (c <= 0) break;
+
+                combo++;
+                AddScoreForClear(c, comboMultiplier: combo);
+
+                if (IsStageCleared())
+                {
+                    yield return StartCoroutine(StageClearBonusRoutine());
+                    isAnimating = false;
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(popDuration);
+                yield return StartCoroutine(PostClearRefillAndEnsure());
+            }
+        }
+
+        // 6) 막힘이면 셔플
+        if (!HasAnyPossibleMove())
+            yield return ShuffleRoutine(force: true);
+
+        isAnimating = false;      // 먼저 잠금 해제
+        ClearBoosterMode();
+        UpdateBoosterUI();        // 잠금 해제된 상태로 UI 갱신
+
+    }
+
+    private IEnumerator UseBooster3_FreeSwitchRoutine(Gem first, Gem second)
+    {
+        if (isAnimating) yield break;
+        if (first == null || second == null) yield break;
+
+        // ICE는 Swap 불가(최종 차단은 SwapGems에서도 수행)
+        if (IsIce(first.x, first.y) || IsIce(second.x, second.y))
+        {
+            ClearBoosterMode();
+            UpdateBoosterUI();
+            yield break;
+        }
+
+        isAnimating = true;
+        BeginIceHitWindow();
+
+        if (selectedGem != null)
+        {
+            selectedGem.SetSelected(false);
+            selectedGem = null;
+        }
+
+        if (boosterUseClip != null) PlaySfx(boosterUseClip);
+
+        //  손맛 연출: 링 펄스 후 사라짐 + 젬 ‘툭’(스케일 펀치)
+        ConfirmAndHideBoosterTargetMark(boosterTargetMarkA, ref boosterTargetTweenA);
+        ConfirmAndHideBoosterTargetMark(boosterTargetMarkB, ref boosterTargetTweenB);
+
+        if (first != null) first.transform.DOPunchScale(Vector3.one * boosterSwapPunchScale, boosterSwapPunchDuration, 8, 0.8f);
+        if (second != null) second.transform.DOPunchScale(Vector3.one * boosterSwapPunchScale, boosterSwapPunchDuration, 8, 0.8f);
+
+        yield return new WaitForSeconds(boosterSwapPunchDuration);
+
+        // 1) 스왑(매치 없어도 되돌리지 않음)
+        SwapGems(first, second);
+        yield return new WaitForSeconds(swapResolveDelay);
+
+        // 2) ColorBomb + Stripe 조합(기존 루틴 재사용)
+        if (IsColorStripeCombo(first, second))
+        {
+            Gem colorBomb = first.IsColorBomb ? first : second;
+            Gem stripe = (colorBomb == first) ? second : first;
+
+            yield return StartCoroutine(ColorBombStripeComboRoutine(colorBomb, stripe));
+
+        }
+        else
+        {
+            bool anyColor = first.IsColorBomb || second.IsColorBomb;
+            bool anyWrapped = first.IsWrappedBomb || second.IsWrappedBomb;
+            bool anyStripe = first.IsRowBomb || first.IsColBomb || second.IsRowBomb || second.IsColBomb;
+
+            // 프로젝트 룰: Stripe 즉발(컬러/랩드 혼합은 제외)
+            if (!anyColor && anyStripe && !anyWrapped)
+            {
+                int cleared = ResolveStripeImmediate(first, second);
+                if (cleared > 0)
+                {
+                    AddScoreForClear(cleared, comboMultiplier: 1);
+
+
+                    yield return new WaitForSeconds(popDuration);
+                    yield return StartCoroutine(PostClearRefillAndEnsure());
+                }
+            }
+            // Wrapped + Normal 즉발
+            else if (!anyColor && IsWrappedNormalSwap(first, second))
+            {
+                Gem wrapped = first.IsWrappedBomb ? first : second;
+                int cleared = ActivateWrapped(wrapped);
+
+                if (cleared > 0)
+                {
+                    AddScoreForClear(cleared, comboMultiplier: 1);
+
+
+                    yield return new WaitForSeconds(popDuration);
+                    yield return StartCoroutine(PostClearRefillAndEnsure());
+                }
+            }
+            else
+            {
+                // 나머지 특수 조합 처리
+                int specialCleared = ResolveSpecialSwapIfNeeded(first, second);
+                if (specialCleared > 0)
+                {
+                    AddScoreForClear(specialCleared, comboMultiplier: 1);
+
+
+                    yield return new WaitForSeconds(popDuration);
+                    yield return StartCoroutine(PostClearRefillAndEnsure());
+                }
+            }
+
+            // 3) 매치/캐스케이드
+            int combo = 0;
+            while (true)
+            {
+                int c = CheckMatchesAndClear_WithPromotionsSafe();
+                if (c <= 0) break;
+
+                combo++;
+                AddScoreForClear(c, comboMultiplier: combo);
+
+
+                if (IsStageCleared())
+                {
+                    yield return StartCoroutine(StageClearBonusRoutine());
+                    isAnimating = false;
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(popDuration);
+                yield return StartCoroutine(PostClearRefillAndEnsure());
+            }
+        }
+
+        // 4) 부스터 카운트/Move 소모(옵션)
+        booster3Count--;
+
+        if (booster3ConsumesMove)
+        {
+            movesLeft--;
+            UpdateMovesUI();
+        }
+
+        UpdateBoosterUI();
+
+        // 5) 승/패 체크
+        if (IsStageCleared())
+        {
+            yield return StartCoroutine(StageClearBonusRoutine());
+            isAnimating = false;
+            yield break;
+        }
+        if (movesLeft <= 0)
+        {
+            EndGame(false);
+            isAnimating = false;
+            yield break;
+        }
+
+        // 6) 막힘이면 셔플
+        if (!HasAnyPossibleMove())
+            yield return ShuffleRoutine(force: true);
+
+        isAnimating = false;
+        ClearBoosterMode();
+        UpdateBoosterUI();
+
+    }
+
+    private IEnumerator UseBooster4_RandomSpecial5Routine()
+{
+    if (isAnimating) yield break;
+
+    isAnimating = true;
+
+    // 일반 선택 제거
+    if (selectedGem != null)
+    {
+        selectedGem.SetSelected(false);
+        selectedGem = null;
+    }
+
+    // 부스터 모드도 정리(겹침 방지)
+    ClearBoosterMode();
+
+    ClearHint();
+    idleTimer = 0f;
+
+    if (boosterUseClip != null) PlaySfx(boosterUseClip);
+
+        List<Gem> picks = PickRandomNormalGemsForBooster4(5);
+        if (picks == null || picks.Count == 0)
+        {
+            // 변환할 대상이 없으면 부스터 소모/턴 소모 없이 종료
+            isAnimating = false;
+            UpdateBoosterUI();
+            yield break;
+        }
+
+        // 기준 스케일(절대값 1 금지)
+        Vector3 baseScale = gemBaseScale;
+
+        // 1) 프리 연출: 5개가 "동시에" 살짝 떨림(펀치)
+        Vector3 punchDelta = new Vector3(baseScale.x * booster4PrePunch, baseScale.y * booster4PrePunch, 0f);
+        for (int i = 0; i < picks.Count; i++)
+        {
+            Gem g = picks[i];
+            if (g == null) continue;
+
+            Transform t = g.transform;
+            t.DOKill(true);
+            t.localScale = baseScale;
+
+            t.DOPunchScale(punchDelta, booster4PrePunchDuration, vibrato: 10, elasticity: 0.8f);
+        }
+
+        yield return new WaitForSeconds(booster4PrePunchDuration);
+
+        // 2) 순차 변환: (축소로 사라지는 맛) -> SetSpecial -> (팝업 등장) -> 원복
+        for (int i = 0; i < picks.Count; i++)
+        {
+            Gem g = picks[i];
+            if (g == null) continue;
+
+            Transform t = g.transform;
+            t.DOKill(true);
+            t.localScale = baseScale;
+
+            // 살짝 사라짐(축소)
+            yield return t.DOScale(baseScale * booster4VanishScale, booster4VanishDuration)
+                          .SetEase(Ease.InBack)
+                          .WaitForCompletion();
+
+            // 특수젬으로 변환
+            SpecialGemType st = PickBooster4SpecialType();
+            g.SetSpecial(st);
+
+            // 변환 직후 스케일 잔류 방지(절대 1 금지)
+            t.DOKill(true);
+            t.localScale = baseScale * booster4VanishScale;
+
+            // 등장 팝(확대 후 원복)
+            yield return t.DOScale(baseScale * booster4PostPopScale, booster4PostPopDuration)
+                          .SetEase(Ease.OutQuad)
+                          .WaitForCompletion();
+
+            yield return t.DOScale(baseScale, booster4PostPopDuration)
+                          .SetEase(Ease.OutQuad)
+                          .WaitForCompletion();
+
+            // 다음 변환까지 템포
+            if (booster4StaggerDelay > 0f)
+                yield return new WaitForSeconds(booster4StaggerDelay);
+        }
+
+
+        booster4Count--;
+
+    if (booster4ConsumesMove)
+    {
+        movesLeft--;
+        UpdateMovesUI();
+    }
+
+    UpdateBoosterUI();
+
+    // 변환 후 매치가 생기면 정리
+    int combo = 0;
+    while (true)
+    {
+        int c = CheckMatchesAndClear_WithPromotionsSafe();
+        if (c <= 0) break;
+
+        combo++;
+        AddScoreForClear(c, comboMultiplier: combo);
+
+        if (IsStageCleared())
+        {
+            yield return StartCoroutine(StageClearBonusRoutine());
+            isAnimating = false;
+            yield break;
+        }
+
+        yield return new WaitForSeconds(popDuration);
+        yield return StartCoroutine(PostClearRefillAndEnsure());
+    }
+
+    if (IsStageCleared())
+    {
+        yield return StartCoroutine(StageClearBonusRoutine());
+        isAnimating = false;
+        yield break;
+    }
+
+    if (movesLeft <= 0)
+    {
+        EndGame(false);
+        isAnimating = false;
+        yield break;
+    }
+
+    if (!HasAnyPossibleMove())
+        yield return ShuffleRoutine(force: true);
+
+    isAnimating = false;
+    UpdateBoosterUI();
+}
+
+    private List<Gem> PickRandomNormalGemsForBooster4(int count)
+    {
+        List<Gem> candidates = new List<Gem>(width * height);
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Gem g = gems[x, y];
+                if (g == null) continue;
+                if (IsIce(x, y)) continue;
+                if (g.IsSpecial) continue;
+                if (g.IsColorBomb) continue;
+
+                candidates.Add(g);
+            }
+        }
+
+        List<Gem> picks = new List<Gem>();
+        if (candidates.Count == 0) return picks;
+
+        int target = Mathf.Min(count, candidates.Count);
+        for (int i = 0; i < target; i++)
+        {
+            int idx = Random.Range(0, candidates.Count);
+            picks.Add(candidates[idx]);
+            candidates.RemoveAt(idx);
+        }
+
+        return picks;
+    }
+
+    private int ConvertRandomNormalGemsToSpecial(int count)
+    {
+        if (count <= 0) return 0;
+
+        List<Gem> candidates = new List<Gem>(width * height);
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Gem g = gems[x, y];
+                if (g == null) continue;
+                if (IsIce(x, y)) continue;          // ICE 안은 변환 제외(룰 유지)
+                if (g.IsSpecial) continue;          // 이미 특수면 제외
+                if (g.IsColorBomb) continue;        // 컬러밤은 별도 정책(기본 제외)
+                candidates.Add(g);
+            }
+        }
+
+        if (candidates.Count == 0) return 0;
+
+        int converted = 0;
+        int target = Mathf.Min(count, candidates.Count);
+
+        for (int i = 0; i < target; i++)
+        {
+            int idx = Random.Range(0, candidates.Count);
+            Gem pick = candidates[idx];
+            candidates.RemoveAt(idx);
+
+            if (pick == null) continue;
+
+            SpecialGemType st = PickBooster4SpecialType();
+            pick.SetSpecial(st);
+
+            // 변환 후 스케일/색 상태 확실히 원복
+            pick.ResetVisual(killMoveTween: true);
+
+            converted++;
+
+        }
+
+        return converted;
+    }
+
+    private SpecialGemType PickBooster4SpecialType()
+    {
+        // 기본: Row/Col 위주, 옵션으로 Wrapped/ColorBomb 허용
+        float r = Random.value;
+
+        if (booster4AllowColorBomb && r < 0.05f)
+            return SpecialGemType.ColorBomb;
+
+        if (booster4AllowWrapped && r < 0.20f)
+            return SpecialGemType.WrappedBomb;
+
+        return (Random.value < 0.5f) ? SpecialGemType.RowBomb : SpecialGemType.ColBomb;
     }
 
     private bool IsAdjacent(Gem a, Gem b)
@@ -1281,7 +2898,12 @@ public class BoardManager : MonoBehaviour
         movesLeft--;
         UpdateMovesUI();
 
-        if (score >= targetScore) { EndGame(true); yield break; }
+        if (IsStageCleared())
+        {
+            yield return StartCoroutine(StageClearBonusRoutine());
+            yield break;
+        }
+
         if (movesLeft <= 0) { EndGame(false); yield break; }
 
         // 턴 종료 시점에서 보드가 막혔으면 셔플
@@ -1297,20 +2919,73 @@ public class BoardManager : MonoBehaviour
         idleTimer = 0f;
         yield break;
     }
+    void RegisterGemCollectedIfNeeded(Gem g)
+    {
+        if (g == null) return;
+
+        bool needCollect =
+            (levelGoalType == LevelGoalType.CollectColor ||
+             levelGoalType == LevelGoalType.ScoreAndCollectColor ||
+             levelGoalType == LevelGoalType.CollectMultiColor ||
+             levelGoalType == LevelGoalType.ClearAllIceAndCollectMultiColor);
+
+        if (!needCollect) return;
+
+        // 1) 기존 단일 색 Collect 호환
+        if (levelGoalType == LevelGoalType.CollectColor || levelGoalType == LevelGoalType.ScoreAndCollectColor)
+        {
+            if (g.type == collectGemType)
+            {
+                collectedCount++;
+                UpdateGoalTextUI();
+                UpdateGoalGaugeUI();
+                NotifyGoalProgressChanged();
+            }
+            return;
+        }
+
+        // 2) 멀티 Collect
+        if (collectGemTypesMulti == null || collectTargetsMulti == null || collectedMulti == null) return;
+
+        for (int i = 0; i < collectGemTypesMulti.Length; i++)
+        {
+            if (g.type != collectGemTypesMulti[i]) continue;
+
+            collectedMulti[i]++;
+            UpdateGoalTextUI();
+            UpdateGoalGaugeUI();
+            NotifyGoalProgressChanged();
+            return;
+        }
+    }
+
+
+    private void RegisterIceDestroyed()
+    {
+        clearedIce++;
+        UpdateGoalTextUI();
+        UpdateGoalGaugeUI();
+        NotifyGoalProgressChanged();
+    }
+    private void AddFlatScore(int points)
+    {
+        if (points <= 0) return;
+
+        score += points;
+        UpdateScoreUI();
+
+    }
 
     private void AddScoreForClear(int clearedCount, int comboMultiplier)
     {
-        // comboMultiplier: 1부터 시작
+        if (clearedCount <= 0) return;
+
         int gained = baseScorePerGem * clearedCount * Mathf.Max(1, comboMultiplier);
         score += gained;
+
         UpdateScoreUI();
     }
-    private void AddFlatScore(int amount)
-    {
-        if (amount <= 0) return;
-        score += amount;
-        UpdateScoreUI();
-    }
+
     private IEnumerator PostClearRefillAndEnsure()
     {
         // 낙하/리필 애니메이션까지 포함해서 처리
@@ -2618,6 +4293,189 @@ public class BoardManager : MonoBehaviour
     #endregion
 
     #region Game End / Reset / Stage Link
+    private IEnumerator StageClearBonusRoutine()
+    {
+        // 입력/힌트 차단
+        isAnimating = true;
+        ClearHint();
+        selectedGem = null;
+
+        int startScore = score;
+        int safety = 0;
+
+        if (!enableStageClearMoveBonus || movesLeft <= 0)
+        {
+            lastClearBonusScore = 0;
+            EndGame(true);
+            yield break;
+        }
+
+        while (movesLeft > 0 && safety++ < 999)
+        {
+            // 1) 남은 무브 소모
+            movesLeft--;
+            UpdateMovesUI();
+
+            // 2) 보너스로 터뜨릴 타겟 선택: 남아있는 특수젬 우선
+            if (!TryPickAnySpecialGem(out int bx, out int by))
+            {
+                // 특수젬이 없다면 일반 젬 랜덤 선택
+                if (!TryPickRandomBonusGem(out bx, out by))
+                    break;
+            }
+
+            Gem g = gems[bx, by];
+            if (g == null) continue;
+
+            // (옵션) 보너스 중에는 ICE를 무시하고 터뜨리기 원하면, 먼저 ICE 제거
+            if (stageClearBonusIgnoreIceForDetonation && IsIce(bx, by))
+            {
+                ForceRemoveIceForBonus(bx, by);
+            }
+
+            // 3) 선택된 젬이 일반젬이면 일정 확률로 특수젬으로 변환
+            if (!g.IsSpecial && Random.Range(0, 100) < stageClearBonusMakeSpecialChance)
+            {
+                g.SetSpecial(PickRandomBonusSpecialType());
+            }
+
+
+            // 4) 해당 칸을 트리거로 체인 클리어
+            bool[,] mask = new bool[width, height];
+            mask[bx, by] = true;
+
+            int cleared = ClearByMaskWithChain(mask);
+            AddScoreForClear(cleared, comboMultiplier: 1);
+
+            // 5) 터짐/리필/캐스케이드 정리
+            yield return new WaitForSeconds(popDuration);
+            yield return StartCoroutine(PostClearRefillAndEnsure());
+
+            if (stageClearBonusStepDelay > 0f)
+                yield return new WaitForSeconds(stageClearBonusStepDelay);
+            if (stageClearBonusAlsoDetonateRemainingSpecials)
+            {
+                yield return StartCoroutine(DetonateAllRemainingSpecialsRoutine());
+            }
+        }
+
+        lastClearBonusScore = score - startScore;
+
+        EndGame(true);
+    }
+    private IEnumerator DetonateAllRemainingSpecialsRoutine()
+    {
+        int safety = 0;
+
+        while (safety++ < 999)
+        {
+            if (!TryPickAnySpecialGem(out int x, out int y))
+                yield break;
+
+            if (stageClearBonusIgnoreIceForDetonation && IsIce(x, y))
+            {
+                ForceRemoveIceForBonus(x, y);
+            }
+
+            bool[,] mask = new bool[width, height];
+            mask[x, y] = true;
+
+            int cleared = ClearByMaskWithChain(mask);
+            AddScoreForClear(cleared, comboMultiplier: 1);
+
+            yield return new WaitForSeconds(popDuration);
+            yield return StartCoroutine(PostClearRefillAndEnsure());
+
+            if (stageClearBonusStepDelay > 0f)
+                yield return new WaitForSeconds(stageClearBonusStepDelay);
+        }
+    }
+    private bool TryPickAnySpecialGem(out int outX, out int outY)
+    {
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                Gem g = gems[x, y];
+                if (g == null) continue;
+                if (!g.IsSpecial) continue;
+
+                // 보너스에서 ICE를 무시하지 않을 거면 ICE 안 특수젬은 건드리지 않음
+                if (!stageClearBonusIgnoreIceForDetonation && IsIce(x, y))
+                    continue;
+
+                outX = x;
+                outY = y;
+                return true;
+            }
+        }
+
+        outX = -1;
+        outY = -1;
+        return false;
+    }
+    private void ForceRemoveIceForBonus(int x, int y)
+    {
+        if (obstacles == null) return;
+        if (x < 0 || x >= width || y < 0 || y >= height) return;
+        if (obstacles[x, y] != ObstacleType.Ice) return;
+
+        obstacles[x, y] = ObstacleType.None;
+
+        if (iceHp != null) iceHp[x, y] = 0;
+
+        if (iceObjects != null && iceObjects[x, y] != null)
+        {
+            Destroy(iceObjects[x, y]);
+            iceObjects[x, y] = null;
+        }
+    }
+
+    private bool TryPickRandomBonusGem(out int outX, out int outY)
+    {
+        // 랜덤 1차 시도
+        for (int i = 0; i < 40; i++)
+        {
+            int x = Random.Range(0, width);
+            int y = Random.Range(0, height);
+
+            if (IsIce(x, y)) continue;
+            if (gems[x, y] == null) continue;
+
+            outX = x;
+            outY = y;
+            return true;
+        }
+
+        // 폴백: 스캔
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                if (IsIce(x, y)) continue;
+                if (gems[x, y] == null) continue;
+
+                outX = x;
+                outY = y;
+                return true;
+            }
+        }
+
+        outX = -1;
+        outY = -1;
+        return false;
+    }
+
+    private SpecialGemType PickRandomBonusSpecialType()
+    {
+        // Row/Col 중심 + (옵션) Wrapped 소량
+        float r = Random.value;
+
+        if (stageClearBonusAllowWrapped && r < 0.15f)
+            return SpecialGemType.WrappedBomb;
+
+        return (r < 0.575f) ? SpecialGemType.RowBomb : SpecialGemType.ColBomb;
+    }
 
     private void EndGame(bool isWin)
     {
@@ -2640,6 +4498,7 @@ public class BoardManager : MonoBehaviour
             }
             else
             {
+                if (!isWin) lastClearBonusScore = 0;
                 resultText.text = "FAILED...";
                 resultText.color = new Color(0.9f, 0.3f, 0.3f);
             }
@@ -2658,12 +4517,12 @@ public class BoardManager : MonoBehaviour
 
         if (isWin)
         {
-            int bonusPerMove = 50;
-            int bonusScore = movesLeft * bonusPerMove;
-            int finalScore = score + bonusScore;
+            int bonusScore = Mathf.Max(0, lastClearBonusScore);
+            int finalScore = score;
 
             if (clearBonusText != null) clearBonusText.text = $"Bonus: +{bonusScore}";
             if (clearFinalScoreText != null) clearFinalScoreText.text = $"Final Score: {finalScore}";
+
         }
         else
         {
@@ -2700,6 +4559,7 @@ public class BoardManager : MonoBehaviour
         ClearHint();
 
         score = 0;
+        lastClearBonusScore = 0;
         movesLeft = maxMoves;
 
         UpdateScoreUI();
@@ -2710,6 +4570,11 @@ public class BoardManager : MonoBehaviour
         if (shuffleOverlay != null) shuffleOverlay.SetActive(false);
         if (retryButton != null) retryButton.gameObject.SetActive(false);
         if (nextStageButton != null) nextStageButton.gameObject.SetActive(false);
+        star1Shown = star2Shown = star3Shown = false;
+        if (star1Image != null) star1Image.gameObject.SetActive(false);
+        if (star2Image != null) star2Image.gameObject.SetActive(false);
+        if (star3Image != null) star3Image.gameObject.SetActive(false);
+        if (goalFillImage != null) goalFillImage.fillAmount = 0f;
     }
     private IEnumerator AlignBoardNextFrame()
     {
@@ -2735,8 +4600,11 @@ public class BoardManager : MonoBehaviour
 
         targetScore = goal;
         maxMoves = moves;
+        SetupStarThresholds();
         CacheGemBaseScale();
         ResetState();
+        InitBoostersForStage();
+
 
         // 2) 보드 생성
         gems = new Gem[width, height];
@@ -2759,13 +4627,22 @@ public class BoardManager : MonoBehaviour
             // ApplyIceForStage(stageNumber);
             // 지금은 “단일 루트” 원칙이면 그냥 비워도 됨.
         }
+        // ICE 개수 재계산 + GoalType 적용(ICE 스테이지면 AND로 자동 전환)
+        RecountTotalIce();
+        ApplyGoalFromStageData(StageManager.Instance != null ? StageManager.Instance.CurrentStage : null);
+        Debug.Log($"[Stage] id={StageManager.Instance?.CurrentStage?.stageID} useCollect={StageManager.Instance?.CurrentStage?.useCollectGoal} targets={(StageManager.Instance?.CurrentStage?.collectTargets == null ? 0 : StageManager.Instance.CurrentStage.collectTargets.Count)} totalIce={totalIce} goalType={levelGoalType}");
+
+
+        // 런타임 진행도 리셋 + UI 갱신
+        ResetGoalProgress();
+        UpdateGoalTextUI();
+        UpdateGoalGaugeUI();
 
         // 5) 시작 1회 보드 검증(즉시 매치 제거 + 무브 확보)
         StartCoroutine(ShuffleRoutine(force: false));
 
         // 6) UI
         UpdateScoreUI();
-        UpdateGoalUI();
         UpdateMovesUI();
 
         // 7) 보드판 보이게 + 사이즈 갱신
@@ -2945,6 +4822,9 @@ public class BoardManager : MonoBehaviour
         // ===== 아직 안 깨짐 =====
         if (iceHp[x, y] > 0)
             return;
+       
+        // 최종 파괴 확정 시점 (obstacles None으로 내리기 전에든 후든 1회만 보장되면 OK)
+        RegisterIceDestroyed();
 
         // ===== 최종 파괴(HP==0) =====
         if (iceHp[x, y] > 0) return;
@@ -3570,17 +5450,21 @@ public class BoardManager : MonoBehaviour
 
         if (colorBomb != null && gems[colorBomb.x, colorBomb.y] == colorBomb)
         {
+            RegisterGemCollectedIfNeeded(colorBomb);
             gems[colorBomb.x, colorBomb.y] = null;
             Destroy(colorBomb.gameObject);
             totalCleared++;
         }
 
+
         if (stripe != null && gems[stripe.x, stripe.y] == stripe)
         {
+            RegisterGemCollectedIfNeeded(stripe);
             gems[stripe.x, stripe.y] = null;
             Destroy(stripe.gameObject);
             totalCleared++;
         }
+
 
         foreach (Gem g in converted)
         {
@@ -3596,7 +5480,12 @@ public class BoardManager : MonoBehaviour
             movesLeft--;
             UpdateMovesUI();
 
-            if (score >= targetScore) { EndGame(true); yield break; }
+            if (IsStageCleared())
+            {
+                yield return StartCoroutine(StageClearBonusRoutine());
+                yield break;
+            }
+
             if (movesLeft <= 0) { EndGame(false); yield break; }
 
             yield return new WaitForSeconds(popDuration);
@@ -3631,6 +5520,7 @@ public class BoardManager : MonoBehaviour
             int y = p.y;
 
             Gem g = gems[x, y];
+
             if (g == null) continue;
 
             if (!g.IsSpecial) continue;
@@ -3703,6 +5593,8 @@ public class BoardManager : MonoBehaviour
                 BreakAdjacentIceAt(x, y, iceHitThisPass);
 
                 Gem g = gems[x, y];
+                // 실제 삭제 확정 시점에서만 Collect 카운트
+                RegisterGemCollectedIfNeeded(g);
                 gems[x, y] = null;
                 cleared++;
 

@@ -1,25 +1,42 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
-/// <summary>
-/// 개별 스테이지 설정 데이터.
-/// ScriptableObject(StageDatabase)에 배열로 묶어서 사용한다.
-/// </summary>
+[Serializable]
+public class CollectTarget
+{
+    public int gemType;
+    public int target;
+}
+
 [Serializable]
 public class StageData
 {
-    [Header("Obstacles - Ice Cage (0:none, 1:ice)")]
+    // YAML: stageID
+    [FormerlySerializedAs("stageId")]
+    public int stageID = 1;
+
+    // (선택) 설명 텍스트
+    [TextArea] public string stageDescription;
+
+    public int targetScore = 500;
+    public int maxMoves = 20;
+
+    public int boardWidth = 5;
+    public int boardHeight = 5;
+
+    public bool useObstacles = false;
+    public int obstacleCount = 0;
+    public int obstacleLevel = 0;
+
+    public bool useCollectGoal = false;
+
+    // YAML은 0/1로 저장돼도 bool로 문제 없이 로드됩니다.
+    public bool requirePassScore = false;
+
+    public List<CollectTarget> collectTargets = new List<CollectTarget>();
+
+    // YAML: iceCage
     public int[] iceCage;
-
-    // 스테이지 기본 정보
-    public int stageID;         // 스테이지 번호(표시용)
-    public int targetScore;     // 목표 점수
-    public int maxMoves;        // 제한 횟수
-    public int boardWidth = 8;  // 보드 가로 크기
-    public int boardHeight = 8; // 보드 세로 크기
-
-    // 방해요소용 확장 데이터 (추후 사용 예정)
-    public bool useObstacles = false; // 이 스테이지에서 방해요소 사용 여부
-    public int obstacleCount = 0;     // 장애물 개수(대략)
-    public int obstacleLevel = 0;     // 난이도/단계 (0=없음, 1,2,3...)
 }
