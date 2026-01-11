@@ -13,20 +13,21 @@ MonoBehaviour:
   m_Name: StageDB
   m_EditorClassIdentifier: 
   stages:
-  - iceCage: 
-    stageID: 1
+  - stageID: 1
+    stageDescription: 
     targetScore: 500
     maxMoves: 20
     boardWidth: 5
-    boardHeight: 5
+    boardHeight: 6
     useObstacles: 0
     obstacleCount: 0
     obstacleLevel: 0
     useCollectGoal: 0
     requirePassScore: 0
     collectTargets: []
-  - iceCage: 
-    stageID: 2
+    iceCage: 
+  - stageID: 2
+    stageDescription: 
     targetScore: 800
     maxMoves: 30
     boardWidth: 5
@@ -41,8 +42,9 @@ MonoBehaviour:
       target: 10
     - gemType: 2
       target: 10
-  - iceCage: 
-    stageID: 3
+    iceCage: 
+  - stageID: 3
+    stageDescription: 
     targetScore: 1200
     maxMoves: 20
     boardWidth: 6
@@ -57,10 +59,11 @@ MonoBehaviour:
       target: 30
     - gemType: 5
       target: 30
-    - gemType: 8
+    - gemType: 7
       target: 30
-  - iceCage: 
-    stageID: 4
+    iceCage: 
+  - stageID: 4
+    stageDescription: 
     targetScore: 1500
     maxMoves: 22
     boardWidth: 6
@@ -73,10 +76,9 @@ MonoBehaviour:
     collectTargets:
     - gemType: 3
       target: 40
-    - gemType: 3
-      target: 40
-  - iceCage: 
-    stageID: 5
+    iceCage: 
+  - stageID: 5
+    stageDescription: 
     targetScore: 1800
     maxMoves: 22
     boardWidth: 7
@@ -93,8 +95,9 @@ MonoBehaviour:
       target: 30
     - gemType: 7
       target: 30
-  - iceCage: 
-    stageID: 6
+    iceCage: 
+  - stageID: 6
+    stageDescription: 
     targetScore: 2200
     maxMoves: 24
     boardWidth: 8
@@ -111,5 +114,6 @@ MonoBehaviour:
       target: 30
     - gemType: 5
       target: 30
-    - gemType: 8
+    - gemType: 7
       target: 30
+    iceCage: 

@@ -3,20 +3,40 @@
   "WorkspaceRootPath": "G:\\match3\\Match3_learn\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|g:\\match3\\match3_learn\\assets\\scripts\\stagemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|G:\\match3\\Match3_learn\\assets\\scripts\\stagemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stagemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|G:\\match3\\Match3_learn\\assets\\scripts\\boardmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\boardmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|g:\\match3\\match3_learn\\assets\\scripts\\stageselectui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stageselectui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|g:\\match3\\match3_learn\\assets\\scripts\\gameplaystagebootstrap.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gameplaystagebootstrap.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|g:\\match3\\match3_learn\\assets\\scripts\\stageinfoui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stageinfoui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|g:\\match3\\match3_learn\\assets\\scripts\\boardmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\boardmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|g:\\match3\\match3_learn\\assets\\scripts\\collectgoalhudui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\collectgoalhudui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|G:\\match3\\Match3_learn\\assets\\scripts\\goaliconitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\goaliconitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|G:\\match3\\Match3_learn\\assets\\scripts\\stageenterbutton.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stageenterbutton.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|G:\\match3\\Match3_learn\\assets\\scripts\\bgmmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\bgmmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|G:\\match3\\Match3_learn\\assets\\scripts\\stageselectuibinder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stageselectuibinder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|G:\\match3\\Match3_learn\\assets\\scripts\\stagedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -25,26 +45,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|G:\\match3\\Match3_learn\\assets\\scripts\\stagedatabase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stagedatabase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|g:\\match3\\match3_learn\\assets\\scripts\\stageselectpanelcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stageselectpanelcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|g:\\match3\\match3_learn\\assets\\scripts\\collectgoalhudui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\collectgoalhudui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|g:\\match3\\match3_learn\\assets\\scripts\\stageselectuibinder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stageselectuibinder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|G:\\match3\\Match3_learn\\assets\\scripts\\stageinfoui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stageinfoui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|g:\\match3\\match3_learn\\assets\\scripts\\stageenterbutton.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stageenterbutton.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{77AE205E-E70C-866A-8EC3-7E5DBECAC428}|Assembly-CSharp.csproj|G:\\match3\\Match3_learn\\Assets\\Scripts\\StageSlider.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -58,59 +58,69 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "StageSelectPanelController.cs",
-              "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageSelectPanelController.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\StageSelectPanelController.cs",
-              "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageSelectPanelController.cs",
-              "RelativeToolTip": "Assets\\Scripts\\StageSelectPanelController.cs",
-              "ViewState": "AgIAACcAAAAAAAAAAAAIwEAAAAA1AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-10T18:51:55.333Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "CollectGoalHUDUI.cs",
-              "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\CollectGoalHUDUI.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\CollectGoalHUDUI.cs",
-              "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\CollectGoalHUDUI.cs",
-              "RelativeToolTip": "Assets\\Scripts\\CollectGoalHUDUI.cs",
-              "ViewState": "AgIAACcAAAAAAAAAAAAiwD0AAAA0AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-10T18:51:50.014Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "StageSelectUI.cs",
               "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageSelectUI.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\StageSelectUI.cs",
               "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageSelectUI.cs",
               "RelativeToolTip": "Assets\\Scripts\\StageSelectUI.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAiAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB4AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-10T18:51:47.163Z",
+              "WhenOpened": "2026-01-11T14:20:22.482Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "GamePlayStageBootstrap.cs",
-              "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\GamePlayStageBootstrap.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\GamePlayStageBootstrap.cs",
-              "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\GamePlayStageBootstrap.cs",
-              "RelativeToolTip": "Assets\\Scripts\\GamePlayStageBootstrap.cs",
-              "ViewState": "AgIAAAQAAAAAAAAAAAAAABgAAAAVAAAAAAAAAA==",
+              "DocumentIndex": 4,
+              "Title": "CollectGoalHUDUI.cs",
+              "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\CollectGoalHUDUI.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\CollectGoalHUDUI.cs",
+              "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\CollectGoalHUDUI.cs",
+              "RelativeToolTip": "Assets\\Scripts\\CollectGoalHUDUI.cs",
+              "ViewState": "AgIAAG0AAAAAAAAAAAAAwIkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-10T18:51:38.834Z",
+              "WhenOpened": "2026-01-11T14:04:08.878Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "GoalIconItem.cs",
+              "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\GoalIconItem.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\GoalIconItem.cs",
+              "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\GoalIconItem.cs",
+              "RelativeToolTip": "Assets\\Scripts\\GoalIconItem.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAA==",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADBSURBVDhPY2AYBQwMDAwMN17c\u002BO\u002B1yv2/4ETe/9aLLf7feHH9P7L8vHNz4XxkNhxYLzb/33yo4T8DAwND06GG/16r3FEUCU7khfOR2QwMDAyMMMH3\u002BZ8ZYYK6czX/X06\u002Bzjjv3Nz/xYcLkNXDgausO8OqoDUQPeimogN8LmBC5pADsBqgO1fzPwM0wGA2Ck7kRWGHrQtBuMRzlfv/5sONkEA83PjferEF0YHIwACNRqtF5v8FJ/L\u002B91zpRno0jnAAAA95Yu0ct6ifAAAAAElFTkSuQmCC",
+              "WhenOpened": "2026-01-11T12:46:24.223Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "BGMManager.cs",
+              "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\BGMManager.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\BGMManager.cs",
+              "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\BGMManager.cs",
+              "RelativeToolTip": "Assets\\Scripts\\BGMManager.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAfAAAAAAAAAA==",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADBSURBVDhPY2AYBQwMDAwMN17c\u002BO\u002B1yv2/4ETe/9aLLf7feHH9P7L8vHNz4XxkNhxYLzb/33yo4T8DAwND06GG/16r3FEUCU7khfOR2QwMDAyMMMH3\u002BZ8ZYYK6czX/X06\u002Bzjjv3Nz/xYcLkNXDgausO8OqoDUQPeimogN8LmBC5pADsBqgO1fzPwM0wGA2Ck7kRWGHrQtBuMRzlfv/5sONkEA83PjferEF0YHIwACNRqtF5v8FJ/L\u002B91zpRno0jnAAAA95Yu0ct6ifAAAAAElFTkSuQmCC",
+              "WhenOpened": "2026-01-11T12:46:24.225Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "StageEnterButton.cs",
+              "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageEnterButton.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\StageEnterButton.cs",
+              "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageEnterButton.cs",
+              "RelativeToolTip": "Assets\\Scripts\\StageEnterButton.cs",
+              "ViewState": "AgIAACoAAAAAAAAAAAAIwD0AAAAJAAAAAAAAAA==",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADBSURBVDhPY2AYBQwMDAwMN17c\u002BO\u002B1yv2/4ETe/9aLLf7feHH9P7L8vHNz4XxkNhxYLzb/33yo4T8DAwND06GG/16r3FEUCU7khfOR2QwMDAyMMMH3\u002BZ8ZYYK6czX/X06\u002Bzjjv3Nz/xYcLkNXDgausO8OqoDUQPeimogN8LmBC5pADsBqgO1fzPwM0wGA2Ck7kRWGHrQtBuMRzlfv/5sONkEA83PjferEF0YHIwACNRqtF5v8FJ/L\u002B91zpRno0jnAAAA95Yu0ct6ifAAAAAElFTkSuQmCC",
+              "WhenOpened": "2026-01-11T12:46:24.226Z"
             },
             {
               "$type": "Document",
@@ -120,35 +130,22 @@
               "RelativeDocumentMoniker": "Assets\\Scripts\\StageManager.cs",
               "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageManager.cs",
               "RelativeToolTip": "Assets\\Scripts\\StageManager.cs",
-              "ViewState": "AgIAADsAAAAAAAAAAAAiwE0AAAArAAAAAAAAAA==",
+              "ViewState": "AgIAABUAAAAAAAAAAAAYwC8AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-10T17:20:54.914Z",
+              "WhenOpened": "2026-01-11T12:46:24.226Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "StageEnterButton.cs",
-              "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageEnterButton.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\StageEnterButton.cs",
-              "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageEnterButton.cs",
-              "RelativeToolTip": "Assets\\Scripts\\StageEnterButton.cs",
-              "ViewState": "AgIAAAgAAAAAAAAAAAAvwCUAAAAbAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-10T10:16:43.315Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "BoardManager.cs",
               "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\BoardManager.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\BoardManager.cs",
               "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\BoardManager.cs",
               "RelativeToolTip": "Assets\\Scripts\\BoardManager.cs",
-              "ViewState": "AgIAACETAAAAAAAAAAAAADUTAAApAAAAAAAAAA==",
+              "ViewState": "AgIAAOACAAAAAAAAAAAAwAkDAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-10T05:53:01.92Z",
+              "WhenOpened": "2026-01-11T12:46:24.228Z",
               "EditorCaption": ""
             },
             {
@@ -159,10 +156,9 @@
               "RelativeDocumentMoniker": "Assets\\Scripts\\StageSelectUIBinder.cs",
               "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageSelectUIBinder.cs",
               "RelativeToolTip": "Assets\\Scripts\\StageSelectUIBinder.cs",
-              "ViewState": "AgIAABMAAAAAAAAAAAAgwDAAAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-10T02:52:46.361Z",
-              "EditorCaption": ""
+              "ViewState": "AgIAACoAAAAAAAAAAAAYwEsAAAAAAAAAAAAAAA==",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADBSURBVDhPY2AYBQwMDAwMN17c\u002BO\u002B1yv2/4ETe/9aLLf7feHH9P7L8vHNz4XxkNhxYLzb/33yo4T8DAwND06GG/16r3FEUCU7khfOR2QwMDAyMMMH3\u002BZ8ZYYK6czX/X06\u002Bzjjv3Nz/xYcLkNXDgausO8OqoDUQPeimogN8LmBC5pADsBqgO1fzPwM0wGA2Ck7kRWGHrQtBuMRzlfv/5sONkEA83PjferEF0YHIwACNRqtF5v8FJ/L\u002B91zpRno0jnAAAA95Yu0ct6ifAAAAAElFTkSuQmCC",
+              "WhenOpened": "2026-01-11T12:46:24.229Z"
             },
             {
               "$type": "Document",
@@ -174,12 +170,11 @@
               "RelativeToolTip": "Assets\\Scripts\\StageSlider.cs",
               "ViewState": "AgIAALUAAAAAAAAAAAAYwMUAAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-09T19:20:26.997Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-11T12:46:24.229Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 9,
               "Title": "StageData.cs",
               "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageData.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\StageData.cs",
@@ -187,25 +182,24 @@
               "RelativeToolTip": "Assets\\Scripts\\StageData.cs",
               "ViewState": "AgIAAAEAAAAAAAAAAAAAwA8AAAAUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-09T19:20:26.998Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-11T12:46:24.231Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 3,
               "Title": "StageInfoUI.cs",
               "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageInfoUI.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\StageInfoUI.cs",
               "ToolTip": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageInfoUI.cs",
               "RelativeToolTip": "Assets\\Scripts\\StageInfoUI.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACEAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAFUAAAAAAAAAAAAgwGAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-09T19:20:26.999Z",
+              "WhenOpened": "2026-01-11T12:46:24.236Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 10,
               "Title": "StageDatabase.cs",
               "DocumentMoniker": "G:\\match3\\Match3_learn\\Assets\\Scripts\\StageDatabase.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\StageDatabase.cs",
@@ -213,8 +207,7 @@
               "RelativeToolTip": "Assets\\Scripts\\StageDatabase.cs",
               "ViewState": "AgIAAAMAAAAAAAAAAAAAwBUAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-09T19:20:26.999Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-11T12:46:24.241Z"
             }
           ]
         }

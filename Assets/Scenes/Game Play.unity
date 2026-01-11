@@ -1226,8 +1226,8 @@ MonoBehaviour:
     icon: {fileID: 199334392}
     remainText: {fileID: 103668677}
   - root: {fileID: 634115316}
-    icon: {fileID: 199334392}
-    remainText: {fileID: 103668677}
+    icon: {fileID: 105068198}
+    remainText: {fileID: 1503300453}
   iceRoot: {fileID: 959663808}
   iceRemainText: {fileID: 2130968662}
   canvasGroup: {fileID: 0}
@@ -4622,14 +4622,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stageDB: {fileID: 11400000, guid: a32377123c116844389102e96a4d23d2, type: 2}
-  currentStageIndex: 0
-  board: {fileID: 2065945593}
-  bgmSource: {fileID: 1167600213}
-  stageSelectBgmClip: {fileID: 8300000, guid: a25195caff7a96245b11a500129eba2e, type: 3}
-  inGameBgmClip: {fileID: 8300000, guid: b6867a94bda56a74f9f9a91445f6eacf, type: 3}
-  bgmDefaultVolume: 0.6
   selectedStageKey: SelectedStageIndex
-  autoSelectFromPrefsOnStart: 1
+  fallbackStageId: 1
+  autoLoadOnStart: 1
 --- !u!4 &876509810
 Transform:
   m_ObjectHideFlags: 0
@@ -5663,7 +5658,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: b6867a94bda56a74f9f9a91445f6eacf, type: 3}
-  m_PlayOnAwake: 0
+  m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
   Loop: 1

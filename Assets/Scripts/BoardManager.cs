@@ -711,6 +711,8 @@ public class BoardManager : MonoBehaviour
     }
 
 
+    // BoardManager.cs
+    // 위치: private void ApplyGoalFromStageData(StageData s)  <-- 이 함수 전체를 교체
     private void ApplyGoalFromStageData(StageData s)
     {
         // 기본값: 인스펙터 설정 유지(디버그/단독 실행 대비)
@@ -727,9 +729,9 @@ public class BoardManager : MonoBehaviour
         // 스테이지 단위로 requirePassScore를 오버라이드
         requirePassScore = s.requirePassScore;
 
-        // 2~4개 권장: 중복 gemType 제거 + 유효값만 수집
-        List<int> types = new List<int>(4);
-        List<int> targets = new List<int>(4);
+        // 핵심: 같은 gemType이 여러 번 들어오면 "제거"가 아니라 "합산"한다.
+        Dictionary<int, int> summed = new Dictionary<int, int>(8);
+        List<int> order = new List<int>(4); // 최초 등장 순서 유지(표시 순서 고정)
 
         for (int i = 0; i < s.collectTargets.Count; i++)
         {
@@ -740,28 +742,42 @@ public class BoardManager : MonoBehaviour
             if (t < 0) continue;
             if (gemSprites != null && t >= gemSprites.Length) continue;
 
-            // 중복 타입 제거(첫 항목 우선)
-            if (types.Contains(t)) continue;
-
-            types.Add(t);
-            targets.Add(goal);
-
-            if (types.Count >= 4) break; // 최대 4개 제한
+            if (!summed.ContainsKey(t))
+            {
+                summed[t] = goal;
+                order.Add(t);
+            }
+            else
+            {
+                summed[t] += goal;
+            }
         }
 
-        if (types.Count == 0) return;
+        if (order.Count == 0) return;
 
-        collectGemTypesMulti = types.ToArray();
-        collectTargetsMulti = targets.ToArray();
-        collectedMulti = new int[types.Count];
+        int n = Mathf.Min(4, order.Count);
+
+        collectGemTypesMulti = new int[n];
+        collectTargetsMulti = new int[n];
+        collectedMulti = new int[n];
+
+        for (int i = 0; i < n; i++)
+        {
+            int t = order[i];
+            collectGemTypesMulti[i] = t;
+            collectTargetsMulti[i] = summed[t];
+        }
 
         // 블로커(ICE) 스테이지면: ICE AND Collect
-        // totalIce는 RecountTotalIce() 이후 값이므로, ApplyGoalFromStageData는 Recount 이후에 호출해야 함.
+        // totalIce는 RecountTotalIce() 이후 값이므로, ApplyGoalFromStageData는 Recount 이후에 호출되어야 함.
         if (totalIce > 0)
             levelGoalType = LevelGoalType.ClearAllIceAndCollectMultiColor;
         else
             levelGoalType = LevelGoalType.CollectMultiColor;
     }
+
+
+
 
     private void AlignBoardToMiddleArea()
     {

@@ -121,25 +121,34 @@ public class CollectGoalHUDUI : MonoBehaviour
         // Collect 슬롯 갱신
         if (hasCollect && collectSlots != null && collectSlots.Length > 0)
         {
-            int count = Mathf.Min(types.Length, collectSlots.Length);
+            int n = Mathf.Min(types.Length, targets.Length, collected.Length, collectSlots.Length);
+
+            // 표시 순서 고정: type 오름차순 (원하면 다른 기준으로 바꿔도 됨)
+            int[] order = new int[n];
+            for (int i = 0; i < n; i++) order[i] = i;
+            Array.Sort(order, (a, b) => types[a].CompareTo(types[b]));
 
             for (int i = 0; i < collectSlots.Length; i++)
             {
-                bool active = (i < count);
+                bool active = (i < n);
                 if (collectSlots[i]?.root != null) collectSlots[i].root.SetActive(active);
                 if (!active) continue;
 
-                int t = types[i];
-                int goal = targets[i];
-                int got = collected[i];
+                int src = order[i];
+
+                int t = types[src];
+                int goal = targets[src];
+                int got = collected[src];
                 int remain = Mathf.Max(0, goal - got);
 
                 if (collectSlots[i].icon != null && board.gemSprites != null && t >= 0 && t < board.gemSprites.Length)
                     collectSlots[i].icon.sprite = board.gemSprites[t];
 
+                // Stage 선택 화면처럼 "x30" 포맷으로 통일 (게임 시작 시점에 완전히 동일해짐)
                 if (collectSlots[i].remainText != null)
-                    collectSlots[i].remainText.text = remain.ToString();
+                    collectSlots[i].remainText.text = $"x{remain}";
             }
+
         }
         else
         {

@@ -28,16 +28,24 @@ public class StageManager : MonoBehaviour
         Instance = this;
         if (board == null)
             board = Object.FindFirstObjectByType<BoardManager>();
+        DontDestroyOnLoad(gameObject);
+
+        // Start()에서 하던 자동 로드를 Awake로 당긴다 (씬 로드 타이밍 문제 방지)
+        if (autoLoadOnStart)
+        {
+            int stageId = PlayerPrefs.GetInt(selectedStageKey, fallbackStageId);
+            LoadStageById(stageId);
+        }
 
     }
 
+    // StageManager.cs
+    // 위치: private void Start()  <-- 이 함수 전체를 교체
     private void Start()
     {
-        if (!autoLoadOnStart) return;
-
-        int stageId = PlayerPrefs.GetInt(selectedStageKey, fallbackStageId);
-        LoadStageById(stageId);
+        // Awake에서 이미 자동 로드를 처리함.
     }
+
 
     public bool LoadStageById(int stageId)
     {
