@@ -155,7 +155,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: "\uC2A4\uD14C\uC774\uC9C0 \uC124\uBA85_0"
+      name: Stage_Index
       rect:
         serializedVersion: 2
         x: 421
@@ -163,7 +163,7 @@ TextureImporter:
         width: 2333
         height: 700
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -176,33 +176,11 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-    - serializedVersion: 2
-      name: "\uC2A4\uD14C\uC774\uC9C0 \uC124\uBA85_1"
-      rect:
-        serializedVersion: 2
-        x: 3007
-        y: 108
-        width: 7
-        height: 8
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 70d0f24b8a1fc5f00800000000000000
-      internalID: 1107025315306081543
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 6de0982421e662248be37678ddc60bbd
     internalID: 0
     vertices: []
     indices: 
@@ -212,7 +190,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      "\uC2A4\uD14C\uC774\uC9C0 \uC124\uBA85_0": 2135940585225243858
+      Stage_Index: 2135940585225243858
       "\uC2A4\uD14C\uC774\uC9C0 \uC124\uBA85_1": 1107025315306081543
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0

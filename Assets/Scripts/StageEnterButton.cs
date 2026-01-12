@@ -50,6 +50,16 @@ public class StageEnterButton : MonoBehaviour
             StartCoroutine(LoadGameplayNextFrame());
             return;
         }
+        // 선택된 스테이지 id를 어디서든 얻어온다고 가정 (예: currentStageId)
+        int stageId = stage.stageID;
+        PlayerPrefs.SetInt(selectedStageKey, stageId);
+        PlayerPrefs.Save();
+        Debug.Log($"[StageEnterButton] Save SelectedStageId={stageId}");
+
+
+        Time.timeScale = 1f; // 혹시라도 꼬였으면 복구
+
+        SceneManager.LoadScene("Game Play");
 
         SceneManager.LoadScene(gameplaySceneName);
 

@@ -401,7 +401,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa85b4656322e36428386d38c96d605f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetSource: {fileID: 0}
+  saveKey: BGM_VOL
+  targetTag: BGM
   iconImage: {fileID: 4416622447154744341}
   normalIcon: {fileID: -1926325914090448671, guid: cdc44ce6bb83e0148a5576668d744a4d, type: 3}
   muteIcon: {fileID: -1567406287916833367, guid: b293854202c0a9a4a9f304cfad5fd47a, type: 3}
@@ -422,7 +423,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &8362407991913311781
 RectTransform:
   m_ObjectHideFlags: 0
@@ -796,7 +797,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa85b4656322e36428386d38c96d605f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetSource: {fileID: 0}
+  saveKey: BGM_VOL
+  targetTag: BGM
   iconImage: {fileID: 829868683634436367}
   normalIcon: {fileID: -2095926306372441291, guid: bd34d9c2615fe2c40917ff70df9b4b0b, type: 3}
   muteIcon: {fileID: 8951745594451748600, guid: 507a4cf73a0b69a43a48faf02657a615, type: 3}

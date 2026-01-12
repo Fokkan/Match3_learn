@@ -44,4 +44,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb7aa5c387ea12644ac1be9bf41f6bcd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  settingsWindow: {fileID: 102002442502303975, guid: 0c3a88d20b89e9e4788218ed9a9603a7, type: 3}
+  settingsWindow: {fileID: 4549940035478207626, guid: 884e5a0e1c309ab47b53508a101d0f47, type: 3}
+  masterMixer: {fileID: 0}

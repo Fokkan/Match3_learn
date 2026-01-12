@@ -152,7 +152,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: "\uD6A8\uACFC\uC74C \uC74C\uC18C\uAC70_0"
+      name: SFX_Mute
       rect:
         serializedVersion: 2
         x: 14
@@ -160,7 +160,7 @@ TextureImporter:
         width: 1218
         height: 1206
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -177,7 +177,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 5365e06b81e8e9142ae46a522f3676ad
     internalID: 0
     vertices: []
     indices: 
@@ -187,7 +187,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      "\uD6A8\uACFC\uC74C \uC74C\uC18C\uAC70_0": -1567406287916833367
+      SFX_Mute: -1567406287916833367
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

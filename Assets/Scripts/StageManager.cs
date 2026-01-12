@@ -17,7 +17,7 @@ public class StageManager : MonoBehaviour
 
     [Header("Auto Load")]
     [SerializeField] private bool autoLoadOnStart = true;
-
+    private static StageManager _instance;
     private void Awake()
     {
         if (Instance != null && Instance != this)

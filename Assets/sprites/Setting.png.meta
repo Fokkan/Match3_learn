@@ -152,7 +152,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: "\uC124\uC815 \uBC84\uD2BC_0"
+      name: Setting_Botton
       rect:
         serializedVersion: 2
         x: 240
@@ -160,7 +160,7 @@ TextureImporter:
         width: 607
         height: 592
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -177,7 +177,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 39ec89e20f46cd647b730865a04c7df2
     internalID: 0
     vertices: []
     indices: 
@@ -187,7 +187,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      "\uC124\uC815 \uBC84\uD2BC_0": 2620001887091611218
+      Setting_Botton: 2620001887091611218
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

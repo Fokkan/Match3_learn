@@ -70,6 +70,7 @@
     <Compile Include="Assets\Scripts\StageSelectUI.cs" />
     <Compile Include="Assets\Scripts\BGMManager.cs" />
     <Compile Include="Assets\Scripts\StageManager.cs" />
+    <Compile Include="Assets\Scripts\GameplaySettingsBridge.cs" />
     <Compile Include="Assets\Scripts\StageEnterButton.cs" />
     <Compile Include="Assets\Scripts\CollectGoalHUDUI.cs" />
     <Compile Include="Assets\Scripts\StageSelectPanelController.cs" />

@@ -945,15 +945,25 @@ public class BoardManager : MonoBehaviour
 
     #region Unity Lifecycle
 
+    private static BoardManager _instance;
+
     private void Awake()
     {
-        // 보드판(plate/grid)은 Awake에서 강제로 끄지 않는다.
-        // 씬에서 필요하면 인스펙터로 비활성화하고,
-        // 게임 시작/LoadStage에서 켜는 흐름으로 관리한다.
+        if (_instance != null && _instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        _instance = this;
+
+        // DontDestroyOnLoad(gameObject); // 유지할 이유 없으면 제거
     }
+
 
     private void Start()
     {
+        Debug.Log($"[DEBUG] timeScale={Time.timeScale}");
+
         CacheGemBaseScale();
         if (StageManager.Instance == null || StageManager.Instance.CurrentStage == null)
         {
