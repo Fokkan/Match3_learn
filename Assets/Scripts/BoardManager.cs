@@ -87,7 +87,7 @@ public class BoardManager : MonoBehaviour
         ScoreAndClearAllIce,
         ScoreAndCollectColor
     }
-
+    
 
     [Header("Goal Stars Options")]
     [SerializeField] private bool hideStarsUntilReached = true;
@@ -4486,18 +4486,55 @@ public class BoardManager : MonoBehaviour
 
         return (r < 0.575f) ? SpecialGemType.RowBomb : SpecialGemType.ColBomb;
     }
+    [Header("Result Popup (Art UI)")]
+    [SerializeField] private ResultPopupUi resultPopupUi; // GameOverPanel에 붙인 ResultPopupUi 연결
 
     private void EndGame(bool isWin)
     {
+        
+
         isGameOver = true;
 
         bool hasNextStage = (StageManager.Instance != null &&
                              StageManager.Instance.HasNextStage());
+        Debug.Log($"[EndGame] isWin={isWin}, score={score}, passScore={passScore}, movesLeft={movesLeft}, maxMoves={maxMoves}, hasNextStage={hasNextStage}, resultPopupUi={(resultPopupUi ? resultPopupUi.name : "NULL")}");
+
 
         ClearHint();
 
         if (gameOverPanel != null)
-            gameOverPanel.SetActive(true);
+            // ===== Art Result Popup UI =====
+            if (resultPopupUi != null)
+            {
+                int earnedStars = 0;
+                if (isWin)
+                {
+                    if (score >= passScore) earnedStars = 1;
+                    if (score >= star2Score) earnedStars = 2;
+                    if (score >= star3Score) earnedStars = 3;
+                }
+
+                int bonus = isWin ? Mathf.Max(0, lastClearBonusScore) : 0;
+                int finalScore = score; // 네 프로젝트 기준: 이미 score에 반영된 구조면 그대로 사용
+
+                resultPopupUi.Show(
+          isWin,
+          earnedStars,
+          passScore,
+          score,
+          movesLeft,
+          maxMoves,
+          bonus,
+          finalScore,
+          hasNextStage
+      );
+
+
+                return; // 아래 "구형 텍스트 결과창" 로직은 건너뛴다.
+
+            }
+
+        gameOverPanel.SetActive(true);
 
         if (resultText != null)
         {
@@ -4542,6 +4579,41 @@ public class BoardManager : MonoBehaviour
 
         if (retryButton != null) retryButton.gameObject.SetActive(true);
         if (nextStageButton != null) nextStageButton.gameObject.SetActive(isWin && hasNextStage);
+        // BoardManager.cs / BoardManager / EndGame(bool isWin) 맨 아래에 추가
+        if (resultPopupUi != null)
+        {
+            // 별 계산 (기존 퍼센트 기준)
+            float p = (targetScore > 0) ? (float)score / targetScore : (isWin ? 1f : 0f);
+            int earnedStars =
+                (p >= star3Percent) ? 3 :
+                (p >= star2Percent) ? 2 :
+                (p >= star1Percent) ? 1 : 0;
+
+            int usedMoves = maxMoves - movesLeft;
+            int bonusScore = isWin ? Mathf.Max(0, lastClearBonusScore) : 0;
+            int finalScore = score; // 너 프로젝트 기준: 보너스를 score에 합산 안 하면 그대로 score, 합산이면 score+bonusScore로 변경
+
+            
+
+            Debug.Log($"[EndGame->Popup] win={isWin}, stars={earnedStars}, target={targetScore}, score={score}, movesLeft={movesLeft}, maxMoves={maxMoves}, bonus={bonusScore}, final={finalScore}, hasNext={hasNextStage}");
+
+            resultPopupUi.Show(
+                isWin,
+                earnedStars,
+                targetScore,
+                score,
+                movesLeft,
+                maxMoves,
+                bonusScore,
+                finalScore,
+                hasNextStage
+            );
+        }
+        else
+        {
+            Debug.LogWarning("[EndGame->Popup] resultPopupUi is NULL (Inspector reference missing).");
+        }
+
     }
 
     private void PlaySfx(AudioClip clip)
@@ -5635,6 +5707,10 @@ public class BoardManager : MonoBehaviour
 
     private void HandleDebugKeys()
     {
+        // [DEBUG] 결과창 바로 띄우기
+        if (Input.GetKeyDown(KeyCode.F9)) { DebugShowResultPopup(true); return; } // 승리 팝업
+        if (Input.GetKeyDown(KeyCode.F10)) { DebugShowResultPopup(false); return; } // 실패 팝업
+
         if (selectedGem == null) return;
 
         if (Input.GetKeyDown(KeyCode.Alpha1))
@@ -5651,6 +5727,75 @@ public class BoardManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Alpha5))
             selectedGem.SetSpecial(SpecialGemType.WrappedBomb);
+    }
+    // [DEBUG] Force show result popup without playing the stage
+    private void DebugShowResultPopup(bool isWin)
+    {
+        if (gameOverPanel == null)
+        {
+            Debug.LogWarning("[DEBUG] gameOverPanel is null. Assign it in BoardManager inspector.");
+            return;
+        }
+
+        // 팝업 루트 활성화 (비활성 상태면 UI 스크립트가 동작 못함)
+        gameOverPanel.SetActive(true);
+
+        // 새 ResultPopupUi가 붙어있으면 그걸 우선 사용
+        var popup = gameOverPanel.GetComponent<ResultPopupUi>();
+        if (popup != null)
+        {
+            int stars = isWin ? 3 : 0;
+
+            // 네 프로젝트 기준: 점수/타겟은 BoardManager 값 재사용 (없으면 적당히 수정)
+            int targetScore = passScore;
+            int currentScore = score;
+            int finalScore = score; // 지금 구조상 finalScore를 따로 굴리면 그 변수로 교체
+
+            bool hasNextStage = false;
+            if (isWin && StageManager.Instance != null)
+                hasNextStage = StageManager.Instance.HasNextStage();
+
+            int bonus = isWin ? Mathf.Max(0, lastClearBonusScore) : 0;
+
+            popup.Show(
+                isWin: isWin,
+                earnedStars: stars,      //  핵심: stars -> earnedStars
+                targetScore: targetScore,
+                score: currentScore,
+                movesLeft: movesLeft,
+                maxMoves: maxMoves,
+                bonusScore: bonus,
+                finalScore: finalScore,
+                hasNextStage: hasNextStage
+            );
+
+
+            // 보드 입력 막기(원하면 유지)
+            isGameOver = true;
+            return;
+        }
+
+        // (fallback) 구 UI 로직만 남아있는 경우 대비
+        Debug.LogWarning("[DEBUG] ResultPopupUi component not found on gameOverPanel. Showing legacy panel only.");
+        isGameOver = true;
+    }
+
+    private void DebugHideResultPopup()
+    {
+        if (gameOverPanel == null) return;
+
+        var popup = gameOverPanel.GetComponent<ResultPopupUi>();
+        if (popup != null)
+        {
+            popup.HideImmediate();
+        }
+        else
+        {
+            gameOverPanel.SetActive(false);
+        }
+
+        // 다시 플레이 가능하게 풀기(원하면 제거)
+        isGameOver = false;
     }
 
     #endregion

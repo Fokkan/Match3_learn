@@ -49,6 +49,8 @@ public class StageManager : MonoBehaviour
 
     public bool LoadStageById(int stageId)
     {
+        Debug.Log($"[TRACE] LoadStageById({stageId}) called\n{System.Environment.StackTrace}");
+
         if (stageDB == null)
         {
             Debug.LogError("[StageManager] StageDatabase reference missing.");
@@ -85,6 +87,8 @@ public class StageManager : MonoBehaviour
 
     public bool LoadStageByIndex(int index)
     {
+        Debug.Log($"[TRACE] LoadStageByIndex({index}) called\n{System.Environment.StackTrace}");
+
         if (stageDB == null) return false;
 
         StageData stage = stageDB.GetStageByIndex(index);
