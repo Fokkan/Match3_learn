@@ -71,20 +71,49 @@ public class SimpleVolume : MonoBehaviour
     void FindAllTargets()
     {
         targetSources.Clear();
-        GameObject[] targets = GameObject.FindGameObjectsWithTag(targetTag);
+
+        if (string.IsNullOrEmpty(targetTag))
+            return;
+
+        GameObject[] targets = null;
+
+        try
+        {
+            targets = GameObject.FindGameObjectsWithTag(targetTag);
+        }
+        catch (UnityException e)
+        {
+            Debug.LogWarning($"[SimpleVolume] Tag '{targetTag}' is not defined or not usable in this project. " +
+                             $"Add it in Project Settings > Tags and Layers, or change targetTag. ({e.Message})");
+            return;
+        }
+
         foreach (GameObject obj in targets)
         {
+            if (obj == null) continue;
             AudioSource source = obj.GetComponent<AudioSource>();
             if (source != null) targetSources.Add(source);
         }
     }
 
+
     void HandleSliderChange(float value)
     {
         PlayerPrefs.SetFloat(saveKey, value);
         PlayerPrefs.Save();
+
+        // 1) 본인 즉시 적용(씬 전환/이벤트 꼬임 방지)
+        FindAllTargets();
+        foreach (var source in targetSources)
+        {
+            if (source != null) source.volume = value;
+        }
+        UpdateIcon(value);
+
+        // 2) 다른 슬라이더(같은 키) 동기화
         OnVolumeGlobalChanged?.Invoke(saveKey, value);
     }
+
 
     void SyncVolume(string key, float value)
     {

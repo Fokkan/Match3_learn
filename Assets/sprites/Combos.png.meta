@@ -1,0 +1,601 @@
+fileFormatVersion: 2
+guid: 1404afb9eec13864ab813577bf776e63
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5914830569253755517
+    second: Combos_0
+  - first:
+      213: 2700468511457254562
+    second: Combos_1
+  - first:
+      213: 3630336089543633472
+    second: Combos_2
+  - first:
+      213: 2057481694381749529
+    second: Combos_3
+  - first:
+      213: -7313100254962946814
+    second: Combos_4
+  - first:
+      213: -3167422830516599180
+    second: Combos_5
+  - first:
+      213: -1213023532909196196
+    second: Combos_6
+  - first:
+      213: 1014392134902779801
+    second: Combos_7
+  - first:
+      213: -7374435453371570279
+    second: Combos_8
+  - first:
+      213: -7949241244410210338
+    second: Combos_9
+  - first:
+      213: -2565847753309530139
+    second: Combos_10
+  - first:
+      213: 7882319512523750378
+    second: Combos_11
+  - first:
+      213: -2813626429177931291
+    second: Combos_12
+  - first:
+      213: -1738216650741022956
+    second: Combos_13
+  - first:
+      213: 7288050859781647574
+    second: Combos_14
+  - first:
+      213: -6006733346695384515
+    second: Combos_15
+  - first:
+      213: -3801604891239971426
+    second: Combos_16
+  - first:
+      213: 5538899196498564839
+    second: Combos_17
+  - first:
+      213: 8382613717517650828
+    second: Combos_18
+  - first:
+      213: 692888613043226180
+    second: Combos_19
+  - first:
+      213: 7468396513552670469
+    second: Combos_20
+  - first:
+      213: 5976011759625955168
+    second: Combos_21
+  - first:
+      213: -6915210838955929850
+    second: Combos_22
+  - first:
+      213: 3372950285624921186
+    second: Combos_23
+  - first:
+      213: 406526810555120592
+    second: Combos_24
+  - first:
+      213: 121166907563445308
+    second: Combos_25
+  - first:
+      213: -5900934646011583149
+    second: Combos_26
+  - first:
+      213: 6357938160172430086
+    second: Combos_27
+  - first:
+      213: 4706175058431477715
+    second: Combos_28
+  - first:
+      213: -5973119258112280343
+    second: Combos_29
+  - first:
+      213: 1058272063959844673
+    second: Combos_30
+  - first:
+      213: -2696264389045120535
+    second: Combos_31
+  - first:
+      213: -2263838349625743585
+    second: Combos_32
+  - first:
+      213: -8996533996934521040
+    second: Combos_33
+  - first:
+      213: 4601616469488711473
+    second: Combos_34
+  - first:
+      213: 6569727327219391966
+    second: Combos_35
+  - first:
+      213: -8848295647076664929
+    second: Combos_36
+  - first:
+      213: 8338171190871630201
+    second: Combos_37
+  - first:
+      213: 6950051490434907631
+    second: Combos_38
+  - first:
+      213: -3864288390637889947
+    second: Combos_39
+  - first:
+      213: -84487463986704661
+    second: Combos_40
+  - first:
+      213: 2002459223134621042
+    second: Combos_41
+  - first:
+      213: 1195904041045899530
+    second: Combos_42
+  - first:
+      213: 5567189279916112353
+    second: Combos_43
+  - first:
+      213: -8457318490183364880
+    second: Combos_44
+  - first:
+      213: -7450316833676905896
+    second: Combos_45
+  - first:
+      213: -2580658737810513164
+    second: Combos_46
+  - first:
+      213: 6739024917347768404
+    second: Combos_47
+  - first:
+      213: -4174765110099083869
+    second: Combos_48
+  - first:
+      213: 5448773299398306086
+    second: Combos_49
+  - first:
+      213: -2566488872450783325
+    second: Combos_50
+  - first:
+      213: 7565011050992648890
+    second: Combos_51
+  - first:
+      213: -5307847041923433816
+    second: Combos_52
+  - first:
+      213: -2624943755157797387
+    second: Combos_53
+  - first:
+      213: 7604036273757732076
+    second: Combos_54
+  - first:
+      213: -5042111587148952271
+    second: Combos_55
+  - first:
+      213: 1530472803172944993
+    second: Combos_56
+  - first:
+      213: 1110159697383068625
+    second: Combos_57
+  - first:
+      213: -3823255045814437480
+    second: Combos_58
+  - first:
+      213: -5629196345173097640
+    second: Combos_59
+  - first:
+      213: 2192874847084697288
+    second: Combos_60
+  - first:
+      213: -9073855024345098362
+    second: Combos_61
+  - first:
+      213: -3774384673160282882
+    second: Combos_62
+  - first:
+      213: -6202876865275025154
+    second: Combos_63
+  - first:
+      213: 6296475124001863818
+    second: Combos_64
+  - first:
+      213: -7028904747691772213
+    second: Combos_65
+  - first:
+      213: -922614657151148584
+    second: Combos_66
+  - first:
+      213: 1572689681385831386
+    second: Combos_67
+  - first:
+      213: -4803566753089551622
+    second: Combos_68
+  - first:
+      213: -5965625499157137714
+    second: Combos_69
+  - first:
+      213: 5905371878956963951
+    second: Combos_70
+  - first:
+      213: -4812769782009421348
+    second: Combos_71
+  - first:
+      213: 3279605231539725336
+    second: Combos_72
+  - first:
+      213: 3539981421268055594
+    second: Combos_73
+  - first:
+      213: -2881590345816694941
+    second: Combos_74
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Combos_0
+      rect:
+        serializedVersion: 2
+        x: 158
+        y: 719
+        width: 562
+        height: 221
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3978bd716030f334181d992a35f942bf
+      internalID: -5914830569253755517
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Combos_1
+      rect:
+        serializedVersion: 2
+        x: 892
+        y: 712
+        width: 527
+        height: 234
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c3b844b6bddde3d4691d36e9e97eaa07
+      internalID: 2700468511457254562
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Combos_2
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 436
+        width: 579
+        height: 236
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 11432af55ac1216459e3999abf8ed8fc
+      internalID: 3630336089543633472
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Combos_3
+      rect:
+        serializedVersion: 2
+        x: 846
+        y: 415
+        width: 627
+        height: 257
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ce7db9fafabb8b144b0f0257da7ae096
+      internalID: 2057481694381749529
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Combos_4
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 155
+        width: 626
+        height: 244
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dd3c06a8d60960a42bb6c1c6a1335e19
+      internalID: -7313100254962946814
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Combos_5
+      rect:
+        serializedVersion: 2
+        x: 826
+        y: 152
+        width: 664
+        height: 244
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 53e6c8fef75876943aa1c77c5d1c8bc0
+      internalID: -3167422830516599180
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: be7b84a1d8b5b234f9c92356f255bb84
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Combos_0: -5914830569253755517
+      Combos_1: 2700468511457254562
+      Combos_10: -2565847753309530139
+      Combos_11: 7882319512523750378
+      Combos_12: -2813626429177931291
+      Combos_13: -1738216650741022956
+      Combos_14: 7288050859781647574
+      Combos_15: -6006733346695384515
+      Combos_16: -3801604891239971426
+      Combos_17: 5538899196498564839
+      Combos_18: 8382613717517650828
+      Combos_19: 692888613043226180
+      Combos_2: 3630336089543633472
+      Combos_20: 7468396513552670469
+      Combos_21: 5976011759625955168
+      Combos_22: -6915210838955929850
+      Combos_23: 3372950285624921186
+      Combos_24: 406526810555120592
+      Combos_25: 121166907563445308
+      Combos_26: -5900934646011583149
+      Combos_27: 6357938160172430086
+      Combos_28: 4706175058431477715
+      Combos_29: -5973119258112280343
+      Combos_3: 2057481694381749529
+      Combos_30: 1058272063959844673
+      Combos_31: -2696264389045120535
+      Combos_32: -2263838349625743585
+      Combos_33: -8996533996934521040
+      Combos_34: 4601616469488711473
+      Combos_35: 6569727327219391966
+      Combos_36: -8848295647076664929
+      Combos_37: 8338171190871630201
+      Combos_38: 6950051490434907631
+      Combos_39: -3864288390637889947
+      Combos_4: -7313100254962946814
+      Combos_40: -84487463986704661
+      Combos_41: 2002459223134621042
+      Combos_42: 1195904041045899530
+      Combos_43: 5567189279916112353
+      Combos_44: -8457318490183364880
+      Combos_45: -7450316833676905896
+      Combos_46: -2580658737810513164
+      Combos_47: 6739024917347768404
+      Combos_48: -4174765110099083869
+      Combos_49: 5448773299398306086
+      Combos_5: -3167422830516599180
+      Combos_50: -2566488872450783325
+      Combos_51: 7565011050992648890
+      Combos_52: -5307847041923433816
+      Combos_53: -2624943755157797387
+      Combos_54: 7604036273757732076
+      Combos_55: -5042111587148952271
+      Combos_56: 1530472803172944993
+      Combos_57: 1110159697383068625
+      Combos_58: -3823255045814437480
+      Combos_59: -5629196345173097640
+      Combos_6: -1213023532909196196
+      Combos_60: 2192874847084697288
+      Combos_61: -9073855024345098362
+      Combos_62: -3774384673160282882
+      Combos_63: -6202876865275025154
+      Combos_64: 6296475124001863818
+      Combos_65: -7028904747691772213
+      Combos_66: -922614657151148584
+      Combos_67: 1572689681385831386
+      Combos_68: -4803566753089551622
+      Combos_69: -5965625499157137714
+      Combos_7: 1014392134902779801
+      Combos_70: 5905371878956963951
+      Combos_71: -4812769782009421348
+      Combos_72: 3279605231539725336
+      Combos_73: 3539981421268055594
+      Combos_74: -2881590345816694941
+      Combos_8: -7374435453371570279
+      Combos_9: -7949241244410210338
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

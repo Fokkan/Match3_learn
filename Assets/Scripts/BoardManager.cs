@@ -68,10 +68,31 @@ public class BoardManager : MonoBehaviour
     public float specialExplodeDelay = 0.15f;
 
     [Header("Combo UI")]
-    public TMP_Text comboText;
-    public float comboShowTime = 0.6f;
-    public float comboScaleFrom = 0.7f;
-    public float comboScaleTo = 1.2f;
+    [SerializeField] private TMP_Text comboText;
+    [Tooltip("없어도 동작. 있으면 Root를 on/off 해서 전체 숨김 처리.")]
+    [SerializeField] private Transform comboTextRoot;
+
+    [Tooltip("없어도 동작. 있으면 Root를 on/off 해서 전체 숨김 처리.")]
+    [SerializeField] private RectTransform comboImageRoot;
+
+    [Tooltip("콤보 이미지 리스트. IMPORTANT: Element 0은 '콤보 2' 이미지로 간주됨 (combo=2 -> index 0).")]
+    [SerializeField] private List<Image> comboImages = new List<Image>();
+
+    [Tooltip("연속 콤보 중 텍스트가 유지되는 시간(초)")]
+    [SerializeField] private float comboDisplayDuration = 0.5f;
+
+    [Tooltip("텍스트가 사라진 뒤, 콤보 이미지가 보여지는 시간(초)")]
+    [SerializeField] private float comboImageDuration = 0.6f;
+
+    [Tooltip("디버그용: 키로 강제 콤보 UI 테스트")]
+    [SerializeField] private bool debugComboMode = false;
+
+    [SerializeField] private int debugComboLevel = 3;
+
+    private Coroutine comboHideRoutine;
+    private int pendingComboLevel;
+
+
 
     [Header("Game Rule Settings")]
     public int targetScore = 500;
@@ -3841,50 +3862,106 @@ public class BoardManager : MonoBehaviour
     #endregion
 
     #region Combo Banner
-
-    private void ShowComboBanner(int combo)
+    private void ShowComboBanner(int comboLevel)
     {
-        if (comboText == null) return;
-        if (combo < 2) return;
+        if (comboLevel <= 1) return;
 
-        string label;
-        if (combo >= 6) label = "UNBELIEVABLE!";
-        else if (combo >= 5) label = "AMAZING!";
-        else if (combo >= 4) label = "AWESOME!";
-        else if (combo >= 3) label = "GREAT!";
-        else label = "Combo x" + combo;
+        // 연속 콤보 중에는 텍스트만 유지되다가,
+        // 콤보가 끊기면(일정 시간 추가 호출이 없으면) 이미지가 나온다.
+        pendingComboLevel = comboLevel;
 
-        comboText.text = label;
-        comboText.gameObject.SetActive(true);
+        // 이전 시퀀스 리셋
+        if (comboHideRoutine != null)
+        {
+            StopCoroutine(comboHideRoutine);
+            comboHideRoutine = null;
+        }
 
-        Color c = comboText.color;
-        c.a = 1f;
-        comboText.color = c;
+        // 1) 텍스트 ON
+        if (comboTextRoot != null) comboTextRoot.gameObject.SetActive(true);
+        if (comboText != null)
+        {
+            comboText.text = $"COMBO x{comboLevel}";
+            comboText.gameObject.SetActive(true);
+        }
 
-        RectTransform rect = comboText.rectTransform;
-        rect.DOKill();
-        comboText.DOKill();
+        // 2) 이미지는 일단 전부 OFF (연속 콤보 중엔 텍스트만 보여야 함)
+        HideAllComboImages();
+        if (comboImageRoot != null) comboImageRoot.gameObject.SetActive(false);
 
-        rect.localScale = Vector3.one * comboScaleFrom;
-
-        var seq = DOTween.Sequence();
-        seq.Append(rect.DOScale(comboScaleTo, comboShowTime * 0.35f).SetEase(Ease.OutBack));
-        seq.Append(rect.DOScale(1.0f, comboShowTime * 0.25f).SetEase(Ease.OutQuad));
-        seq.Join(comboText.DOFade(0f, comboShowTime * 0.6f).SetDelay(comboShowTime * 0.15f));
+        // 3) "콤보가 끊길 때"를 판단하기 위해 타이머 시작
+        comboHideRoutine = StartCoroutine(HideComboAfterDelay());
     }
 
-    private void HideComboBannerImmediate()
+    private void HideComboBanner()
     {
-        if (comboText == null) return;
+        if (comboHideRoutine != null)
+        {
+            StopCoroutine(comboHideRoutine);
+            comboHideRoutine = null;
+        }
 
-        comboText.DOKill();
-        var c = comboText.color;
-        c.a = 0f;
-        comboText.color = c;
-        comboText.gameObject.SetActive(false);
+        // 전체 즉시 OFF
+        if (comboText != null) comboText.gameObject.SetActive(false);
+        if (comboTextRoot != null) comboTextRoot.gameObject.SetActive(false);
+
+        HideAllComboImages();
+        if (comboImageRoot != null) comboImageRoot.gameObject.SetActive(false);
+    }
+
+    private IEnumerator HideComboAfterDelay()
+    {
+        // 연속 콤보 중이면 ShowComboBanner가 계속 재호출되며,
+        // 이 코루틴은 StopCoroutine으로 끊기고 다시 시작된다.
+        yield return new WaitForSeconds(comboDisplayDuration);
+
+        // 텍스트 OFF
+        if (comboText != null) comboText.gameObject.SetActive(false);
+        if (comboTextRoot != null) comboTextRoot.gameObject.SetActive(false);
+
+        // 텍스트가 사라진 뒤 해당 콤보 이미지 ON -> 잠깐 보여주고 OFF
+        ShowComboImageForLevel(pendingComboLevel);
+
+        float imgDur = (comboImageDuration > 0f) ? comboImageDuration : comboDisplayDuration;
+        yield return new WaitForSeconds(imgDur);
+
+        // 끝나면 전체 OFF
+        HideAllComboImages();
+        if (comboImageRoot != null) comboImageRoot.gameObject.SetActive(false);
+
+        comboHideRoutine = null;
+    }
+
+    private void HideAllComboImages()
+    {
+        if (comboImages == null) return;
+
+        for (int i = 0; i < comboImages.Count; i++)
+        {
+            if (comboImages[i] != null)
+                comboImages[i].gameObject.SetActive(false);
+        }
+    }
+
+    private void ShowComboImageForLevel(int comboLevel)
+    {
+        if (comboImages == null || comboImages.Count == 0) return;
+
+        // IMPORTANT:
+        // 콤보 이미지는 "콤보 2부터" 존재한다고 가정한다.
+        // combo=2 -> index 0, combo=3 -> index 1 ...
+        int idx = Mathf.Clamp(comboLevel - 2, 0, comboImages.Count - 1);
+
+        HideAllComboImages();
+
+        if (comboImageRoot != null) comboImageRoot.gameObject.SetActive(true);
+
+        var img = comboImages[idx];
+        if (img != null) img.gameObject.SetActive(true);
     }
 
     #endregion
+
 
     #region Possible Move / Hint
 
@@ -4646,7 +4723,7 @@ public class BoardManager : MonoBehaviour
 
         UpdateScoreUI();
         UpdateMovesUI();
-        HideComboBannerImmediate();
+        HideComboBanner();
 
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         if (shuffleOverlay != null) shuffleOverlay.SetActive(false);
@@ -5710,6 +5787,21 @@ public class BoardManager : MonoBehaviour
         // [DEBUG] 결과창 바로 띄우기
         if (Input.GetKeyDown(KeyCode.F9)) { DebugShowResultPopup(true); return; } // 승리 팝업
         if (Input.GetKeyDown(KeyCode.F10)) { DebugShowResultPopup(false); return; } // 실패 팝업
+                                                                                    // Combo UI 테스트
+                                                                                    // F4: 강제로 숨김 / F5: 콤보 단계 순환 표시(2콤보부터)
+        if (Input.GetKeyDown(KeyCode.F4))
+        {
+            HideComboBanner();
+            Debug.Log("[DEBUG][Combo] hide");
+        }
+        if (Input.GetKeyDown(KeyCode.F5))
+        {
+            int maxLevel = (comboImages != null && comboImages.Count > 0) ? (comboImages.Count + 1) : 6; // Combo2~(count+1)
+            debugComboLevel++;
+            if (debugComboLevel > maxLevel) debugComboLevel = 2;
+            ShowComboBanner(debugComboLevel);
+            Debug.Log($"[DEBUG][Combo] show level={debugComboLevel} (max={maxLevel})");
+        }
 
         if (selectedGem == null) return;
 

@@ -19,7 +19,7 @@ public class WorldBoardFitterV3 : MonoBehaviour
 
     [Header("Stabilization")]
     [SerializeField] private float scaleEpsilon = 0.001f;
-    [SerializeField] private bool runInEditMode = false;
+    [SerializeField] private bool runInEditModeCustom = false;
 
     private Canvas cachedCanvas;
 

@@ -29,7 +29,7 @@ MonoBehaviour:
   - stageID: 2
     stageDescription: 
     targetScore: 800
-    maxMoves: 30
+    maxMoves: 25
     boardWidth: 5
     boardHeight: 6
     useObstacles: 0
@@ -46,7 +46,7 @@ MonoBehaviour:
   - stageID: 3
     stageDescription: 
     targetScore: 1200
-    maxMoves: 20
+    maxMoves: 30
     boardWidth: 6
     boardHeight: 6
     useObstacles: 0
@@ -65,7 +65,7 @@ MonoBehaviour:
   - stageID: 4
     stageDescription: 
     targetScore: 1500
-    maxMoves: 22
+    maxMoves: 35
     boardWidth: 6
     boardHeight: 7
     useObstacles: 1
@@ -80,7 +80,7 @@ MonoBehaviour:
   - stageID: 5
     stageDescription: 
     targetScore: 1800
-    maxMoves: 22
+    maxMoves: 40
     boardWidth: 7
     boardHeight: 7
     useObstacles: 1
@@ -99,7 +99,7 @@ MonoBehaviour:
   - stageID: 6
     stageDescription: 
     targetScore: 2200
-    maxMoves: 24
+    maxMoves: 50
     boardWidth: 8
     boardHeight: 8
     useObstacles: 1
