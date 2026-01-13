@@ -3664,7 +3664,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: New Text
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: a5c00e3aa9433134bb105dab714121f9, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -3730,7 +3730,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
+  m_hasFontAssetChanged: 1
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &490767384
@@ -10489,16 +10489,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07393d8de57730248aa19c178499738d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  uiArea: {fileID: 1727039949}
-  boardRoot: {fileID: 2065945594}
-  boardPlateRenderer: {fileID: 830499504}
-  worldCamera: {fileID: 519420031}
-  paddingWorld: 0.1
-  minScale: 0.35
-  maxScale: 1
-  fillRatio: 0.88
-  scaleEpsilon: 0.001
-  runInEditModeCustom: 0
+  targetWorld: {fileID: 0}
+  uiAnchor: {fileID: 0}
+  targetCanvas: {fileID: 1889869647}
+  previewInEditMode: 1
+  hideWhenOffscreen: 0
 --- !u!1 &1741759828
 GameObject:
   m_ObjectHideFlags: 0
@@ -12569,7 +12564,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: Shuffling...
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: a5c00e3aa9433134bb105dab714121f9, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -12635,7 +12630,7 @@ MonoBehaviour:
   m_margin: {x: -150.45062, y: 0, z: -149.531, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
+  m_hasFontAssetChanged: 1
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &2084877871
